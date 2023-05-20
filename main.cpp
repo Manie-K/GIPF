@@ -8,14 +8,8 @@ int main()
     Engine* engine = new Engine;
     while (!engine->getExit())
     {
-        if (engine->getIsEngineCommand()) {
-            engine->inputCommand();
-            engine->executeCommand();
-        }
-        else{
-            engine->getSolver()->inputCommand();
-            engine->getSolver()->executeCommand();
-        }
+        engine->inputCommand();
+        engine->executeCommand();
     }
     delete engine;
 }

@@ -3,7 +3,6 @@
 #include <iostream>
 #include <list>
 #include "Config.h"
-#include "Solver.h"
 #include "Board.h"
 
 using namespace std;
@@ -11,25 +10,23 @@ using namespace std;
 class Engine {
 public:
 private:
-	Solver* solver;
 	Board* board;
 	string command;
-	bool isEngineCommand;
+	string gameState;
 	bool exit;
 public:
 	Engine() 
 	{
-		isEngineCommand = true;
+		board = nullptr;
+		command = "";
 		exit = false;
-		solver = new Solver(this);
+		gameState = GAME_STATE_PROGRESS;
 	}
 	~Engine() 
 	{
-		delete solver;
 	}
 	void inputCommand() 
 	{
-		cout << ENGINE_PREFIX;
 		cin >> command;
 	}
 	void executeCommand()
@@ -38,22 +35,33 @@ public:
 			return;
 		else if (command == EXIT_CMD)
 			exit = true;
-		else if (command == SWITCH_CMD)
-			isEngineCommand = false;
 		else if (command == LOAD_GAME_CMD)
 			loadGame();
+		else if (command == PRINT_BOARD_CMD)
+			printGameBoard();
 	}
-	bool getIsEngineCommand() { return isEngineCommand; }
-	void setIsEngineCommand(bool value) {isEngineCommand = value; }
 	bool getExit() { return exit;}
 	void setExit(bool value) { exit = value; }
-	Solver*& getSolver() { return solver; }
 private:
 	void loadGame()
 	{
+		string S, K, GW,GB;
+		cin >> S >> K >> GW >> GB;
 		delete board;
-
-
-		board = new Board();
+		board = new Board(stoi(S), stoi(K), stoi(GW), stoi(GB));
+		string boardStatus = board->getBoardStatus();
+		if (boardStatus != BOARD_STATUS_OK)
+		{
+			delete board;
+			board = nullptr;
+		}
+		cout << boardStatus << "\n";
+	}
+	void printGameBoard()
+	{
+		if (board == nullptr)
+			cout << "Plansza byla niepoprawna lub nie zostala wczytana!!!\n";
+		else
+			board->print();
 	}
 };

@@ -23,7 +23,7 @@ public:
 	int getPieces()const { return piecesCount; }
 	string getColor()const { return color; }
 	void setPieces(int p) { piecesCount = p; }
-	void setColor(string c) { color = c; }
+	void setColor(const string& c) { color = c; }
 private:
 
 };

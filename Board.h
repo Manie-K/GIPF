@@ -5,8 +5,11 @@
 #include <algorithm>
 #include <iostream>
 #include "Players.h"
+#include "Engine.h"
 
 using namespace std;
+
+class Engine;
 
 class Board
 {
@@ -16,17 +19,23 @@ private:
 	const int size, maxSize, pieceCollectSize, outsideSize;
 	Players* players;
 	string boardStatus;
-	vector<string> charMap;
 	vector<vector<char>> map;
-	unordered_map<string, pair<int, int>> hashMap;
+	unordered_map<string, pair<int, int>> posMap;
+	unordered_map<string, string> nameMap; //first string is position written in string
+
 public:
 	Board(int S, int K, int GW, int GB):size(S),maxSize(2 * S - 1),pieceCollectSize(K),outsideSize(S+1)
 	{
 		string whiteP, blackP;
+		int wh, bl;
 		char cur;
+		
 		cin >> whiteP >> blackP >> cur;
-		players = new Players(stoi(whiteP), stoi(blackP), cur);
-		load(GW, stoi(whiteP),GB, stoi(blackP));
+		wh = stringToInt(whiteP);
+		bl = stringToInt(blackP);
+
+		players = new Players(wh,bl, cur);
+		load(GW, wh,GB, bl);
 	}
 	~Board()
 	{
@@ -35,16 +44,38 @@ public:
 	string getBoardStatus()const { return boardStatus; }
 	void print() const
 	{
-		for (string row : charMap)
+		for (int y = 1; y <= size; y++)
 		{
-			cout << row << '\n';
+			for (int z = 1; z < maxSize-y-1; z++)
+			{
+				cout << ' ';
+			}
+			for (int x = 1; x < map[y].size()-1; x++)
+			{
+				cout << map[y][x] << ' ';
+			}
+			cout << '\n';
+		}
+		for (int y = size + 1; y <= maxSize; y++)
+		{
+			for (int z = 1; z < y - 1; z++)
+			{
+				cout << ' ';
+			}
+			for (int x = 1; x < map[y].size() - 1; x++)
+			{
+				cout << map[y][x] << ' ';
+			}
+			cout << '\n';
 		}
 	}
+
 private:
 	void load(const int whiteMax,int whiteReserve, const int blackMax, int blackReserve)
 	{
 		string row;
 		int whiteOnMap = 0, blackOnMap = 0;
+		vector<string> charMap;
 
 		for(int i = 0; i <= maxSize;i++) //first line is ""
 		{
@@ -141,10 +172,83 @@ private:
 				char tempNumber = (char)lettersLeft[tempIndex]+'0';
 				key += tempNumber;
 				lettersLeft[tempIndex]--;
-				hashMap[key] = make_pair(x, y);
+				posMap.insert({ key,make_pair(x, y) });
+				nameMap.insert({makeStringFromPos(make_pair(x, y)) ,key});
 				letter++;
 			}
 		}
 		delete[] lettersLeft;
+	}
+	static string getNameByPos(const pair<int, int>& pos)  
+	{
+		try {
+			string retString = nameMap.at(makeStringFromPos(pos));
+			return retString;
+		}
+		catch (const out_of_range& e)
+		{
+			cerr << "Exception caught: " << e.what() << '\n';
+			cerr << "Accesing wrong position: (" << pos.first << ", " << pos.second << ")!\n";
+		}
+	}
+	static pair<int, int> getPosByName(const string& name) 
+	{
+		try {
+			pair<int,int> retPair = posMap.at(name);
+			return retPair;
+		}
+		catch (const out_of_range& e)
+		{
+			cerr << "Exception caught: " << e.what() << '\n';
+			cerr << "Accesing wrong name: ("<< name<< ")!\n";
+		}
+	}
+	static string makeStringFromPos(const pair<int, int>& pos)
+	{
+		string retString = "";
+		int x = pos.first, y = pos.second;
+		retString += to_string(x);
+		retString += '_';
+		retString += to_string(y);
+		return retString;
+	}
+	static int stringToInt(const string& str)
+	{
+		int ret = 0;
+		int sign = 1;
+		int i = 0;
+
+		if (str[0] == '-') {
+			sign = -1;
+			i++;
+		}
+		else if (str[0] == '+') {
+			i++;
+		}
+
+		while (i < str.length()) {
+			if (str[i] >= '0' && str[i] <= '9') {
+				int digit = str[i] - '0';
+				ret = ret * 10 + digit;
+			}
+			else {
+				break;
+			}
+			i++;
+		}
+
+		return ret * sign;
+	}
+	static vector<pair<int,int>> getLine(const string& posA, const string& posB)
+	{
+		vector<pair<int, int>> retVector;
+		pair<int, int> tempPair;
+		
+		retVector.push_back(getPosByName(posA));
+		retVector.push_back(getPosByName(posB));
+
+
+
+		return retVector;
 	}
 };

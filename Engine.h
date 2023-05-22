@@ -28,10 +28,12 @@ public:
 	void inputCommand() 
 	{
 		cin >> command;
+		if (cin.eof())
+			exit = true;
 	}
 	void executeCommand()
 	{
-		if (command == "")
+		if (exit || command == "")
 			return;
 		else if (command == EXIT_CMD)
 			exit = true;
@@ -40,15 +42,23 @@ public:
 		else if (command == PRINT_BOARD_CMD)
 			printGameBoard();
 	}
-	bool getExit() { return exit;}
+	bool getExit()const { return exit;}
 	void setExit(bool value) { exit = value; }
+	
 private:
 	void loadGame()
 	{
 		string S, K, GW,GB;
+		int s, k, w, b;
+
 		cin >> S >> K >> GW >> GB;
 		delete board;
-		board = new Board(stoi(S), stoi(K), stoi(GW), stoi(GB));
+
+		s = stringToInt(S);
+		k = stringToInt(K);
+		w = stringToInt(GW);
+		b = stringToInt(GB);
+		board = new Board(s,k,w,b);
 		string boardStatus = board->getBoardStatus();
 		if (boardStatus != BOARD_STATUS_OK)
 		{
@@ -57,11 +67,38 @@ private:
 		}
 		cout << boardStatus << "\n";
 	}
-	void printGameBoard()
+	void printGameBoard() const
 	{
 		if (board == nullptr)
 			cout << "Plansza byla niepoprawna lub nie zostala wczytana!!!\n";
 		else
 			board->print();
+	}
+	static int stringToInt(const string& str)
+	{
+		int ret = 0;
+		int sign = 1;
+		int i = 0;
+
+		if (str[0] == '-') {
+			sign = -1;
+			i++;
+		}
+		else if (str[0] == '+') {
+			i++;
+		}
+
+		while (i < str.length()) {
+			if (str[i] >= '0' && str[i] <= '9') {
+				int digit = str[i] - '0';
+				ret = ret * 10 + digit;
+			}
+			else {
+				break;
+			}
+			i++;
+		}
+
+		return ret * sign;
 	}
 };

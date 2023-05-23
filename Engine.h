@@ -87,7 +87,9 @@ private:
 		start = coords.substr(0, tmp);
 		end = coords.substr(tmp, coords.size());
 
-		moveStatus = board->move(start, end);
+		moveStatus = board->checkMove(start, end);
+		if (moveStatus == MOVE_STATUS_OK)
+			board->move(start, end);
 		cout << moveStatus << '\n';
 	}
 

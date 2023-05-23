@@ -69,13 +69,37 @@ public:
 			cout << '\n';
 		}
 	}
-	string move(const string& start, const string& end)
+	string checkMove(const string& start, const string& end) const
 	{
 		pair<int, int> startPos = getPosByName(start), endPos = getPosByName(end);
-		
-	
-	}
+		vector<pair<int, int>> line = getLine(start, end);
 
+		if (startPos.first == -1)
+			return MOVE_STATUS_INDEX(start);
+		if (endPos.first == -1)
+			return MOVE_STATUS_INDEX(end);
+		if (line.empty())
+			return MOVE_STATUS_DIR;
+		if (map.at(startPos.second).at(startPos.first) == OUTSIDE_PIECE)
+			return MOVE_STATUS_BAD_START(start);
+		if(map.at(endPos.second).at(endPos.first) == OUTSIDE_PIECE)
+			return MOVE_STATUS_BAD_DEST(start);
+		if (find(line.begin(), line.end(), EMPTY_PIECE) == line.end())
+			return MOVE_STATUS_ROW;
+		return MOVE_STATUS_OK;
+	}
+	void move(const string& start, const string& end)
+	{
+		pair<int, int> startPos = getPosByName(start), endPos = getPosByName(end);
+		vector<pair<int, int>> line = getLine(start, end);
+		
+		const char color = players->getCurrent()->getColor();
+		for (int i = line.size()-1; i >= 0; i--)
+		{
+			map.at(line.at(i).second).at(line.at(i).first) = map.at(line.at(i - 1).second).at(line.at(i - 1).first);
+		}
+		map.at(endPos.second).at(endPos.first) = color;
+	}
 private:
 	void load(const int whiteMax,int whiteReserve, const int blackMax, int blackReserve)
 	{

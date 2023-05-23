@@ -8,7 +8,7 @@ class Player
 {
 public:
 private:
-	string color;
+	char color;
 	int piecesCount;
 public:
 	Player(bool white, int piecesCount)
@@ -21,9 +21,9 @@ public:
 	}
 	~Player(){}
 	int getPieces()const { return piecesCount; }
-	string getColor()const { return color; }
+	char getColor()const { return color; }
 	void setPieces(int p) { piecesCount = p; }
-	void setColor(const string& c) { color = c; }
+	void setColor(char c) { color = c; }
 private:
 
 };
@@ -51,12 +51,14 @@ public:
 	}
 	void switchPlayers()
 	{
-		string tempColor = current->getColor();
+		char tempColor = current->getColor();
 		int tempPieces = current->getPieces();
 		current->setColor(opponent->getColor());
 		current->setPieces(opponent->getPieces());
 		opponent->setColor(tempColor);
 		opponent->setPieces(tempPieces);
 	}
+	Player*& getCurrent() { return current; }
+	Player*& getOpponent() { return opponent; }
 private:
 };

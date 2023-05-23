@@ -84,8 +84,10 @@ public:
 			return MOVE_STATUS_BAD_START(start);
 		if(map.at(endPos.second).at(endPos.first) == OUTSIDE_PIECE)
 			return MOVE_STATUS_BAD_DEST(start);
-		if (find(line.begin(), line.end(), EMPTY_PIECE) == line.end())
-			return MOVE_STATUS_ROW;
+		for (auto pos : line) {
+			if (map.at(pos.second).at(pos.first)==EMPTY_PIECE)
+				return MOVE_STATUS_ROW;
+		}
 		return MOVE_STATUS_OK;
 	}
 	void move(const string& start, const string& end)

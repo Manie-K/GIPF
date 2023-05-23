@@ -68,7 +68,7 @@ private:
 			delete board;
 			board = nullptr;
 		}
-		cout << boardStatus << "\n";
+		cout << boardStatus << "\n\n";
 	}
 	void printGameBoard() const
 	{
@@ -88,7 +88,7 @@ private:
 		end = coords.substr(tmp+1, coords.size());
 
 		moveStatus = board->checkMove(start, end);
-		cout << moveStatus << '\n';
+		cout << moveStatus << endl << endl;
 	}
 
 	static int stringToInt(const string& str)

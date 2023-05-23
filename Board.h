@@ -84,15 +84,15 @@ public:
 		vector<pair<int, int>> line = getLine(start, end);
 
 		if (startPos.first == -1)
-			return MOVE_STATUS_INDEX(start);
+			return MOVE_STATUS_BAD_PREFIX+ start + MOVE_STATUS_INDEX;
 		if (endPos.first == -1)
-			return MOVE_STATUS_INDEX(end);
+			return MOVE_STATUS_BAD_PREFIX + end + MOVE_STATUS_INDEX;
 		if (line.empty())
 			return MOVE_STATUS_DIR;
 		if (map.at(startPos.second).at(startPos.first) != OUTSIDE_PIECE)
-			return MOVE_STATUS_BAD_START(start);
+			return MOVE_STATUS_BAD_PREFIX + start + MOVE_STATUS_BAD_START;
 		if(map.at(endPos.second).at(endPos.first) == OUTSIDE_PIECE)
-			return MOVE_STATUS_BAD_DEST(start);
+			return MOVE_STATUS_BAD_PREFIX + end + MOVE_STATUS_BAD_DEST;
 		bool emptyPlace = false;
 		for (auto pos : line) 
 		{
@@ -101,8 +101,7 @@ public:
 				break;
 			}
 		}
-		pair<int, int> lastBoardPos = line.at(line.size()-2);
-		if(!emptyPlace || map.at(lastBoardPos.second).at(lastBoardPos.first)!=EMPTY_PIECE)
+		if(!emptyPlace)
 			return MOVE_STATUS_ROW;
 		move(line, endPos);
 		return MOVE_STATUS_OK;
@@ -110,9 +109,16 @@ public:
 	void move(vector<pair<int, int>>& line, const pair<int, int>& endPos)
 	{
 		const char color = players->getCurrent()->getColor();
-		for (int i = line.size()-1; i > 0; i--)
+		int i = 0;
+		while (i < line.size()-1)
 		{
-			map.at(line.at(i).second).at(line.at(i).first) = map.at(line.at(i - 1).second).at(line.at(i - 1).first);
+			if (map.at(line.at(i).second).at(line.at(i).first) == EMPTY_PIECE)
+				break;
+			i++;
+		}
+		for(; i > 0; i--)
+		{
+			map.at(line.at(i).second).at(line.at(i).first) = map.at(line.at(i-1).second).at(line.at(i-1).first);
 		}
 		map.at(endPos.second).at(endPos.first) = color;
 
@@ -249,8 +255,6 @@ private:
 		catch (const out_of_range& e)
 		{
 			return make_pair<int,int>(-1, -1);
-			//cerr << "Exception caught: " << e.what() << '\n';
-			//cerr << "Accesing wrong name: ("<< name<< ")!\n";
 		}
 	}
 	static string makeStringFromPos(const pair<int, int>& pos)
@@ -339,16 +343,16 @@ private:
 			tempPair = getPosByName(nameB);
 			while (tempPair.first != -1)
 			{
-				baseLetter += dL;
 				if (baseLetter < middleLetter)
 					b += dN;
+				baseLetter += dL;
 				tempStr = makeStringFromName(b, baseLetter);
 				tempPair = getPosByName(tempStr);
 				if (tempPair.first != -1)
 					retVector.push_back(tempPair);
 			}
 		}
-		else if ((dL == 1 || dL == -1) && dN == 0)
+		else if (dL == 1 && dN == 0)
 		{
 			tempPair = getPosByName(nameB);
 			while (tempPair.first != -1)
@@ -362,14 +366,28 @@ private:
 					retVector.push_back(tempPair);
 			}
 		}
-		else if (dL == -1 && dN == 1)
+		else if (dL == -1 && dN == 0)
 		{
 			tempPair = getPosByName(nameB);
 			while (tempPair.first != -1)
 			{
 				baseLetter += dL;
 				if (baseLetter < middleLetter)
+					b -= 1;
+				tempStr = makeStringFromName(b, baseLetter);
+				tempPair = getPosByName(tempStr);
+				if (tempPair.first != -1)
+					retVector.push_back(tempPair);
+			}
+		}
+		else if (dL == -1 && dN == 1)
+		{
+			tempPair = getPosByName(nameB);
+			while (tempPair.first != -1)
+			{
+				if (baseLetter > middleLetter)
 					b += dN;
+				baseLetter += dL;
 				tempStr = makeStringFromName(b, baseLetter);
 				tempPair = getPosByName(tempStr);
 				if(tempPair.first != -1)

@@ -28,13 +28,13 @@ public:
 	}
 	void inputCommand() 
 	{
-		cin >> command;
-		if (cin.eof())
+		if (!(cin >> command)) {
 			exit = true;
+		}
 	}
 	void executeCommand()
 	{
-		if (exit || command == "")
+		if (command == "" || exit)
 			return;
 		else if (command == EXIT_CMD)
 			exit = true;

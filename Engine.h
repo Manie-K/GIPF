@@ -24,6 +24,7 @@ public:
 	}
 	~Engine() 
 	{
+		delete board;
 	}
 	void inputCommand() 
 	{
@@ -41,6 +42,8 @@ public:
 			loadGame();
 		else if (command == PRINT_BOARD_CMD)
 			printGameBoard();
+		else if (command == DO_MOVE_CMD)
+			doMove();
 	}
 	bool getExit()const { return exit;}
 	void setExit(bool value) { exit = value; }
@@ -74,6 +77,20 @@ private:
 		else
 			board->print();
 	}
+	void doMove()
+	{
+		string coords, start,end;
+		string moveStatus = "";
+		cin >> coords;
+		
+		int tmp = coords.find('-');
+		start = coords.substr(0, tmp);
+		end = coords.substr(tmp, coords.size());
+
+		moveStatus = board->move(start, end);
+		cout << moveStatus << '\n';
+	}
+
 	static int stringToInt(const string& str)
 	{
 		int ret = 0;

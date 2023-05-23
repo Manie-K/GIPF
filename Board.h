@@ -69,6 +69,12 @@ public:
 			cout << '\n';
 		}
 	}
+	string move(const string& start, const string& end)
+	{
+		pair<int, int> startPos = getPosByName(start), endPos = getPosByName(end);
+		
+	
+	}
 
 private:
 	void load(const int whiteMax,int whiteReserve, const int blackMax, int blackReserve)
@@ -179,7 +185,7 @@ private:
 		}
 		delete[] lettersLeft;
 	}
-	static string getNameByPos(const pair<int, int>& pos)  
+	string getNameByPos(const pair<int, int>& pos) const  
 	{
 		try {
 			string retString = nameMap.at(makeStringFromPos(pos));
@@ -191,7 +197,7 @@ private:
 			cerr << "Accesing wrong position: (" << pos.first << ", " << pos.second << ")!\n";
 		}
 	}
-	static pair<int, int> getPosByName(const string& name) 
+	pair<int, int> getPosByName(const string& name) const 
 	{
 		try {
 			pair<int,int> retPair = posMap.at(name);
@@ -199,8 +205,9 @@ private:
 		}
 		catch (const out_of_range& e)
 		{
-			cerr << "Exception caught: " << e.what() << '\n';
-			cerr << "Accesing wrong name: ("<< name<< ")!\n";
+			return make_pair<int,int>(-1, -1);
+			//cerr << "Exception caught: " << e.what() << '\n';
+			//cerr << "Accesing wrong name: ("<< name<< ")!\n";
 		}
 	}
 	static string makeStringFromPos(const pair<int, int>& pos)
@@ -239,16 +246,99 @@ private:
 
 		return ret * sign;
 	}
-	static vector<pair<int,int>> getLine(const string& posA, const string& posB)
+	vector<pair<int,int>> getLine(const string& nameA, const string& nameB) const
 	{
 		vector<pair<int, int>> retVector;
 		pair<int, int> tempPair;
-		
-		retVector.push_back(getPosByName(posA));
-		retVector.push_back(getPosByName(posB));
+		string tempStr = "";
+		int dN = 0;
+		int a = 0, b = 0;
+		int baseLetter = nameB.at(0);
+		const int dL = baseLetter - nameA.at(0);
+		const char middleLetter = (((2 * outsideSize) - 1)/2)+'a';
 
+		retVector.push_back(getPosByName(nameA));
+		retVector.push_back(getPosByName(nameB));
 
+		if (nameA.size() > 2 || nameB.size() > 2)
+		{
+			for (int i = 1; i < nameA.size(); i++)
+			{
+				a = a * 10 + nameA.at(i);
+			}
+			for (int i = 1; i < nameB.size(); i++)
+			{
+				b = b * 10 + nameB.at(i);
+			}
+		}
+		else
+		{
+			a = nameA.at(1);
+			b = nameB.at(1);
+		}
+		dN = b - a;
+
+		//6 cases
+		if (dL == 0 && (dN == 1 || dN == -1))
+		{
+			tempPair = getPosByName(nameB);
+			while (tempPair.first != -1)
+			{
+				b += dN;
+				tempStr = makeStringFromName(b, baseLetter);
+				tempPair = getPosByName(tempStr);
+				retVector.push_back(tempPair);
+			}
+		}
+		else if (dL == 1 && dN == 1)
+		{
+			tempPair = getPosByName(nameB);
+			while (tempPair.first != -1)
+			{
+				baseLetter += dL;
+				if (baseLetter < middleLetter)
+					b += dN;
+				tempStr = makeStringFromName(b, baseLetter);
+				tempPair = getPosByName(tempStr);
+				retVector.push_back(tempPair);
+			}
+		}
+		else if ((dL == 1 || dL == -1) && dN == 0)
+		{
+			tempPair = getPosByName(nameB);
+			while (tempPair.first != -1)
+			{
+				baseLetter += dL;
+				if (baseLetter >= middleLetter)
+					b -= 1;
+				tempStr = makeStringFromName(b, baseLetter);
+				tempPair = getPosByName(tempStr);
+				retVector.push_back(tempPair);
+			}
+		}
+		else if (dL == -1 && dN == 1)
+		{
+			tempPair = getPosByName(nameB);
+			while (tempPair.first != -1)
+			{
+				baseLetter += dL;
+				if (baseLetter < middleLetter)
+					b += dN;
+				tempStr = makeStringFromName(b, baseLetter);
+				tempPair = getPosByName(tempStr);
+				retVector.push_back(tempPair);
+			}
+		}
+		else retVector.clear();
 
 		return retVector;
+	}
+
+	static string makeStringFromName(int num, char letter)
+	{
+		string tempStr = "";
+		tempStr += letter;
+		tempStr += num;
+		return tempStr;
 	}
 };

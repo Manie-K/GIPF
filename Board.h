@@ -16,7 +16,7 @@ class Board
 public:
 
 private:
-	const int size, maxSize, pieceCollectSize, outsideSize;
+	const int size, maxSize, pieceCollectSize, outsideSize, totalWhite, totalBlack;
 	Players* players;
 	string boardStatus;
 	vector<vector<char>> map;
@@ -24,7 +24,8 @@ private:
 	unordered_map<string, string> nameMap; //first string is position written in string
 
 public:
-	Board(int S, int K, int GW, int GB):size(S),maxSize(2 * S - 1),pieceCollectSize(K),outsideSize(S+1)
+	Board(int S, int K, int GW, int GB):size(S),maxSize(2 * S - 1),pieceCollectSize(K),outsideSize(S+1),totalWhite(GW),
+		totalBlack(GW)
 	{
 		string whiteP, blackP;
 		int wh, bl;
@@ -44,9 +45,17 @@ public:
 	string getBoardStatus()const { return boardStatus; }
 	void print() const
 	{
+		int whiteReserve = players->getCurrent()->getColor() == WHITE_PIECE ?
+			players->getCurrent()->getPieces() : players->getOpponent()->getPieces();
+		int blackReserve = players->getCurrent()->getColor() == BLACK_PIECE ?
+			players->getCurrent()->getPieces() : players->getOpponent()->getPieces();
+
+		cout << size << ' ' << pieceCollectSize << ' ' << totalWhite << ' ' << totalBlack << '\n';
+		cout << whiteReserve << ' ' << blackReserve << ' ' << players->getCurrent()->getColor() << '\n';
+
 		for (int y = 1; y <= size; y++)
 		{
-			for (int z = 1; z < maxSize-y-1; z++)
+			for (int z = 0; z < maxSize-size-(y-1); z++)
 			{
 				cout << ' ';
 			}
@@ -56,9 +65,9 @@ public:
 			}
 			cout << '\n';
 		}
-		for (int y = size + 1; y <= maxSize; y++)
+		for (int y = size+1 ; y <= maxSize; y++)
 		{
-			for (int z = 1; z < y - 1; z++)
+			for (int z = 1; z <= y-size; z++)
 			{
 				cout << ' ';
 			}
@@ -69,7 +78,7 @@ public:
 			cout << '\n';
 		}
 	}
-	string checkMove(const string& start, const string& end) const
+	string checkMove(const string& start, const string& end)
 	{
 		pair<int, int> startPos = getPosByName(start), endPos = getPosByName(end);
 		vector<pair<int, int>> line = getLine(start, end);
@@ -80,27 +89,35 @@ public:
 			return MOVE_STATUS_INDEX(end);
 		if (line.empty())
 			return MOVE_STATUS_DIR;
-		if (map.at(startPos.second).at(startPos.first) == OUTSIDE_PIECE)
+		if (map.at(startPos.second).at(startPos.first) != OUTSIDE_PIECE)
 			return MOVE_STATUS_BAD_START(start);
 		if(map.at(endPos.second).at(endPos.first) == OUTSIDE_PIECE)
 			return MOVE_STATUS_BAD_DEST(start);
-		for (auto pos : line) {
-			if (map.at(pos.second).at(pos.first)==EMPTY_PIECE)
-				return MOVE_STATUS_ROW;
+		bool emptyPlace = false;
+		for (auto pos : line) 
+		{
+			if (map.at(pos.second).at(pos.first) == EMPTY_PIECE) {
+				emptyPlace = true;
+				break;
+			}
 		}
+		pair<int, int> lastBoardPos = line.at(line.size()-2);
+		if(!emptyPlace || map.at(lastBoardPos.second).at(lastBoardPos.first)!=EMPTY_PIECE)
+			return MOVE_STATUS_ROW;
+		move(line, endPos);
 		return MOVE_STATUS_OK;
 	}
-	void move(const string& start, const string& end)
+	void move(vector<pair<int, int>>& line, const pair<int, int>& endPos)
 	{
-		pair<int, int> startPos = getPosByName(start), endPos = getPosByName(end);
-		vector<pair<int, int>> line = getLine(start, end);
-		
 		const char color = players->getCurrent()->getColor();
-		for (int i = line.size()-1; i >= 0; i--)
+		for (int i = line.size()-1; i > 0; i--)
 		{
 			map.at(line.at(i).second).at(line.at(i).first) = map.at(line.at(i - 1).second).at(line.at(i - 1).first);
 		}
 		map.at(endPos.second).at(endPos.first) = color;
+
+		players->getCurrent()->setPieces(players->getCurrent()->getPieces()-1);
+		players->switchPlayers();
 	}
 private:
 	void load(const int whiteMax,int whiteReserve, const int blackMax, int blackReserve)
@@ -187,7 +204,7 @@ private:
 				range--;
 		}
 		//initializing hash map 
-		for (int y = 0; y < outsideSize; y++)
+		for (int y = 0; y < 2*outsideSize-1; y++)
 		{
 			int rowSize = (int)map[y].size();
 			char letter = baseLetter;
@@ -313,7 +330,8 @@ private:
 				b += dN;
 				tempStr = makeStringFromName(b, baseLetter);
 				tempPair = getPosByName(tempStr);
-				retVector.push_back(tempPair);
+				if (tempPair.first != -1)
+					retVector.push_back(tempPair);
 			}
 		}
 		else if (dL == 1 && dN == 1)
@@ -326,7 +344,8 @@ private:
 					b += dN;
 				tempStr = makeStringFromName(b, baseLetter);
 				tempPair = getPosByName(tempStr);
-				retVector.push_back(tempPair);
+				if (tempPair.first != -1)
+					retVector.push_back(tempPair);
 			}
 		}
 		else if ((dL == 1 || dL == -1) && dN == 0)
@@ -335,11 +354,12 @@ private:
 			while (tempPair.first != -1)
 			{
 				baseLetter += dL;
-				if (baseLetter >= middleLetter)
+				if (baseLetter > middleLetter)
 					b -= 1;
 				tempStr = makeStringFromName(b, baseLetter);
 				tempPair = getPosByName(tempStr);
-				retVector.push_back(tempPair);
+				if (tempPair.first != -1)
+					retVector.push_back(tempPair);
 			}
 		}
 		else if (dL == -1 && dN == 1)
@@ -352,7 +372,8 @@ private:
 					b += dN;
 				tempStr = makeStringFromName(b, baseLetter);
 				tempPair = getPosByName(tempStr);
-				retVector.push_back(tempPair);
+				if(tempPair.first != -1)
+					retVector.push_back(tempPair);
 			}
 		}
 		else retVector.clear();

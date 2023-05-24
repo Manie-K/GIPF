@@ -42,7 +42,9 @@ public:
 	{
 		delete players;
 	}
+	
 	string getBoardStatus()const { return boardStatus; }
+	
 	void print() const
 	{
 		int whiteReserve = players->getCurrent()->getColor() == WHITE_PIECE ?
@@ -106,6 +108,7 @@ public:
 		move(line, endPos);
 		return MOVE_STATUS_OK;
 	}
+	
 	void move(vector<pair<int, int>>& line, const pair<int, int>& endPos)
 	{
 		const char color = players->getCurrent()->getColor();
@@ -122,9 +125,26 @@ public:
 		}
 		map.at(endPos.second).at(endPos.first) = color;
 
-		players->getCurrent()->setPieces(players->getCurrent()->getPieces()-1);
-		players->switchPlayers();
+		vector<vector<pair<int, int>>>* chains = new vector<vector<pair<int, int>>>;
+		int chainsCount = checkForChains(chains);
+
+		if (chainsCount < 2)
+		{
+			if (chainsCount == 1)
+			{
+				removeGivenChain(chains->at(0));
+			}
+			players->getCurrent()->setPieces(players->getCurrent()->getPieces() - 1);
+			players->switchPlayers();
+		}
+		else
+		{
+			//implement 2+ chains
+		}
+
+		delete chains;
 	}
+	
 	static int stringToInt(const string& str)
 	{
 		int ret = 0;
@@ -221,7 +241,7 @@ private:
 		loadHashMap();
 
 		//checking if chains are removed
-		int chainsNumber = checkForChains();
+		int chainsNumber = checkForChains(nullptr);
 		if (chainsNumber > 0) {
 			boardStatus = BOARD_STATUS_ERROR + to_string(chainsNumber);
 			if (chainsNumber == 1)
@@ -271,6 +291,7 @@ private:
 		}
 		delete[] lettersLeft;
 	}
+	
 	string getNameByPos(const pair<int, int>& pos) const  
 	{
 		try {
@@ -294,6 +315,7 @@ private:
 			return make_pair<int,int>(-1, -1);
 		}
 	}
+	
 	vector<pair<int,int>> getLine(const string& nameA, const string& nameB) const
 	{
 		vector<pair<int, int>> retVector;
@@ -400,42 +422,95 @@ private:
 		return retVector;
 	}
 
-	int numOfChainsInLine(const vector<pair<int, int>>& line) const
+	void removeGivenChain(const vector<pair<int, int>>& chain)
 	{
-		int chains = 0;
+		int white = 0, black = 0;
+		int whiteStreak = 0, blackStreak = 0;
+		bool wS = false, bS = false;
+		
+		for (int i = 0; i < chain.size(); i++)
+		{
+			if (map.at(chain.at(i).second).at(chain.at(i).first) == WHITE_PIECE) {
+				white++;
+				whiteStreak++;
+				blackStreak = 0;
+			}
+			else if (map.at(chain.at(i).second).at(chain.at(i).first) == BLACK_PIECE){
+				black++;
+				blackStreak++;
+				whiteStreak = 0;
+			}
+			map.at(chain.at(i).second).at(chain.at(i).first) = EMPTY_PIECE;
+			if (whiteStreak >= pieceCollectSize)
+				wS = true;
+			else if (blackStreak >= pieceCollectSize)
+				bS = true;
+		}
+		//handle player pieces
+		if (players->getCurrent()->getColor() == WHITE_PIECE)//current white
+		{
+			if (wS)
+			{
+				players->getCurrent()->setPieces(players->getCurrent()->getPieces() + white);
+			}
+			else if (bS)
+			{
+				players->getOpponent()->setPieces(players->getOpponent()->getPieces() + black);
+			}
+		}
+		else //current black
+		{
+			if (wS)
+			{
+				players->getOpponent()->setPieces(players->getOpponent()->getPieces() + white);
+			}
+			else if (bS)
+			{
+				players->getCurrent()->setPieces(players->getCurrent()->getPieces() + black);
+			}
+		}
+
+	}
+	void chainsInLine(const vector<pair<int, int>>& line, vector<vector<pair<int,int>>>* chains) const
+	{
 		int whiteStreak=0, blackStreak = 0;
+		vector<pair<int, int>> tempChain;
 		for (int i = 0; i < line.size(); i++)
 		{
+			
 			if (map.at(line.at(i).second).at(line.at(i).first) == WHITE_PIECE)
 			{
 				whiteStreak++;
 				blackStreak = 0;
+				tempChain.push_back(line.at(i));
 			}
 			else if (map.at(line.at(i).second).at(line.at(i).first) == BLACK_PIECE)
 			{
 				blackStreak++;
 				whiteStreak = 0;
+				tempChain.push_back(line.at(i));
 			}
 			else
 			{
+				tempChain.clear();
 				blackStreak = whiteStreak = 0;
 			}
 			if (whiteStreak >= pieceCollectSize)
 			{
-				chains++;
+				chains->push_back(tempChain);
 				whiteStreak = 0;
 			}
 			else if (blackStreak >= pieceCollectSize)
 			{
-				chains++;
+				chains->push_back(tempChain);
 				blackStreak = 0;
 			}
 		}
-		return chains;
 	}
-	int checkForChains() const 
+	int checkForChains(vector<vector<pair<int, int>>>* chains) const
 	{
-		int numberOfChains = 0;
+		if (chains == nullptr)
+			chains = new vector<vector<pair<int, int>>>;
 		const char baseLetter = 'a';
 		char letter = baseLetter;
 		int number = 1;
@@ -449,7 +524,7 @@ private:
 			tempStrB = makeStringFromName(number+1, letter+1);
 			number++;
 			lineToCheck = getLine(tempStrA, tempStrB);
-			numberOfChains += numOfChainsInLine(lineToCheck);
+			chainsInLine(lineToCheck,chains);
 		}
 		//horizontal lower
 		number = 1;
@@ -460,7 +535,7 @@ private:
 			tempStrB = makeStringFromName(number + 1, letter + 1);
 			letter++;
 			lineToCheck = getLine(tempStrA, tempStrB);
-			numberOfChains += numOfChainsInLine(lineToCheck);
+			chainsInLine(lineToCheck, chains);
 		}
 		//top left to bottom right
 		number = outsideSize;
@@ -472,7 +547,7 @@ private:
 			letter++;
 			number++;
 			lineToCheck = getLine(tempStrA, tempStrB);
-			numberOfChains += numOfChainsInLine(lineToCheck);
+			chainsInLine(lineToCheck, chains);
 		}
 
 		//top right to bottom left
@@ -485,7 +560,7 @@ private:
 			letter--;
 			number--;
 			lineToCheck = getLine(tempStrA, tempStrB);
-			numberOfChains += numOfChainsInLine(lineToCheck);
+			chainsInLine(lineToCheck, chains);
 		}
 
 		//top left to bottom right, but lower
@@ -497,7 +572,7 @@ private:
 			tempStrB = makeStringFromName(number, letter + 1);
 			number--;
 			lineToCheck = getLine(tempStrA, tempStrB);
-			numberOfChains += numOfChainsInLine(lineToCheck);
+			chainsInLine(lineToCheck, chains);
 		}
 
 		//top right to bottom left, but lower
@@ -510,10 +585,10 @@ private:
 			letter++;
 			number--;
 			lineToCheck = getLine(tempStrA, tempStrB);
-			numberOfChains += numOfChainsInLine(lineToCheck);
+			chainsInLine(lineToCheck, chains);
 		}
 
-		return numberOfChains;
+		return chains->size();
 	}
 
 	static string makeStringFromPos(const pair<int, int>& pos)

@@ -125,17 +125,44 @@ public:
 		players->getCurrent()->setPieces(players->getCurrent()->getPieces()-1);
 		players->switchPlayers();
 	}
+	static int stringToInt(const string& str)
+	{
+		int ret = 0;
+		int sign = 1;
+		int i = 0;
+
+		if (str[0] == '-') {
+			sign = -1;
+			i++;
+		}
+		else if (str[0] == '+') {
+			i++;
+		}
+
+		while (i < str.length()) {
+			if (str[i] >= '0' && str[i] <= '9') {
+				int digit = str[i] - '0';
+				ret = ret * 10 + digit;
+			}
+			else {
+				break;
+			}
+			i++;
+		}
+
+		return ret * sign;
+	}
 private:
-	void load(const int whiteMax,int whiteReserve, const int blackMax, int blackReserve)
+	void load(const int whiteMax, int whiteReserve, const int blackMax, int blackReserve)
 	{
 		string row;
 		int whiteOnMap = 0, blackOnMap = 0;
 		vector<string> charMap;
 
-		for(int i = 0; i <= maxSize;i++) //first line is ""
+		for (int i = 0; i <= maxSize; i++) //first line is ""
 		{
 			getline(cin, row);
-			if(row!="")
+			if (row != "")
 				charMap.push_back(row);
 			whiteOnMap += (int)count(row.begin(), row.end(), WHITE_PIECE);
 			blackOnMap += (int)count(row.begin(), row.end(), BLACK_PIECE);
@@ -182,7 +209,7 @@ private:
 			map[y].insert(map[y].begin(), OUTSIDE_PIECE);
 		}
 		//add top and bottom tiles
-		vector<char> temp1,temp2;
+		vector<char> temp1, temp2;
 		for (int i = 0; i <= size; i++)
 		{
 			temp1.push_back(OUTSIDE_PIECE);
@@ -192,6 +219,16 @@ private:
 		map.insert(map.begin(), temp1);
 		//map ready
 		loadHashMap();
+
+		//checking if chains are removed
+		int chainsNumber = checkForChains();
+		if (chainsNumber > 0) {
+			boardStatus = BOARD_STATUS_ERROR + to_string(chainsNumber);
+			if (chainsNumber == 1)
+				boardStatus += BOARD_STATUS_CHAIN_SINGLE;
+			else
+				boardStatus += BOARD_STATUS_CHAINS_MULTIPLE;
+		}
 	}
 	void loadHashMap()
 	{
@@ -257,42 +294,6 @@ private:
 			return make_pair<int,int>(-1, -1);
 		}
 	}
-	static string makeStringFromPos(const pair<int, int>& pos)
-	{
-		string retString = "";
-		int x = pos.first, y = pos.second;
-		retString += to_string(x);
-		retString += '_';
-		retString += to_string(y);
-		return retString;
-	}
-	static int stringToInt(const string& str)
-	{
-		int ret = 0;
-		int sign = 1;
-		int i = 0;
-
-		if (str[0] == '-') {
-			sign = -1;
-			i++;
-		}
-		else if (str[0] == '+') {
-			i++;
-		}
-
-		while (i < str.length()) {
-			if (str[i] >= '0' && str[i] <= '9') {
-				int digit = str[i] - '0';
-				ret = ret * 10 + digit;
-			}
-			else {
-				break;
-			}
-			i++;
-		}
-
-		return ret * sign;
-	}
 	vector<pair<int,int>> getLine(const string& nameA, const string& nameB) const
 	{
 		vector<pair<int, int>> retVector;
@@ -300,8 +301,8 @@ private:
 		string tempStr = "";
 		int dN = 0;
 		int a = 0, b = 0;
-		int baseLetter = nameB.at(0);
-		const int dL = baseLetter - nameA.at(0);
+		char baseLetter = nameB.at(0);
+		const char dL = baseLetter - nameA.at(0);
 		const char middleLetter = (((2 * outsideSize) - 1)/2)+'a';
 
 		retVector.push_back(getPosByName(nameA));
@@ -399,11 +400,143 @@ private:
 		return retVector;
 	}
 
+	int numOfChainsInLine(const vector<pair<int, int>>& line) const
+	{
+		int chains = 0;
+		int whiteStreak=0, blackStreak = 0;
+		for (int i = 0; i < line.size(); i++)
+		{
+			if (map.at(line.at(i).second).at(line.at(i).first) == WHITE_PIECE)
+			{
+				whiteStreak++;
+				blackStreak = 0;
+			}
+			else if (map.at(line.at(i).second).at(line.at(i).first) == BLACK_PIECE)
+			{
+				blackStreak++;
+				whiteStreak = 0;
+			}
+			else
+			{
+				blackStreak = whiteStreak = 0;
+			}
+			if (whiteStreak >= pieceCollectSize)
+			{
+				chains++;
+				whiteStreak = 0;
+			}
+			else if (blackStreak >= pieceCollectSize)
+			{
+				chains++;
+				blackStreak = 0;
+			}
+		}
+		return chains;
+	}
+	int checkForChains() const 
+	{
+		int numberOfChains = 0;
+		const char baseLetter = 'a';
+		char letter = baseLetter;
+		int number = 1;
+		string tempStrA = "",tempStrB="";
+		vector<pair<int, int>> lineToCheck;
+
+		//horizontal upper
+		for (int i = 0; i < size; i++)
+		{
+			tempStrA = makeStringFromName(number, letter);
+			tempStrB = makeStringFromName(number+1, letter+1);
+			number++;
+			lineToCheck = getLine(tempStrA, tempStrB);
+			numberOfChains += numOfChainsInLine(lineToCheck);
+		}
+		//horizontal lower
+		number = 1;
+		letter = baseLetter + 1;
+		for (int i = 0; i < size - 1; i++)
+		{
+			tempStrA = makeStringFromName(number, letter);
+			tempStrB = makeStringFromName(number + 1, letter + 1);
+			letter++;
+			lineToCheck = getLine(tempStrA, tempStrB);
+			numberOfChains += numOfChainsInLine(lineToCheck);
+		}
+		//top left to bottom right
+		number = outsideSize;
+		letter = baseLetter;
+		for (int i = 0; i < size; i++)
+		{
+			tempStrA = makeStringFromName(number, letter);
+			tempStrB = makeStringFromName(number, letter + 1);
+			letter++;
+			number++;
+			lineToCheck = getLine(tempStrA, tempStrB);
+			numberOfChains += numOfChainsInLine(lineToCheck);
+		}
+
+		//top right to bottom left
+		number = 2*outsideSize-1;
+		letter = baseLetter+size;
+		for (int i = 0; i < size; i++)
+		{
+			tempStrA = makeStringFromName(number, letter);
+			tempStrB = makeStringFromName(number-1, letter);
+			letter--;
+			number--;
+			lineToCheck = getLine(tempStrA, tempStrB);
+			numberOfChains += numOfChainsInLine(lineToCheck);
+		}
+
+		//top left to bottom right, but lower
+		number = size;
+		letter = baseLetter;
+		for (int i = 0; i < size-1; i++)
+		{
+			tempStrA = makeStringFromName(number, letter);
+			tempStrB = makeStringFromName(number, letter + 1);
+			number--;
+			lineToCheck = getLine(tempStrA, tempStrB);
+			numberOfChains += numOfChainsInLine(lineToCheck);
+		}
+
+		//top right to bottom left, but lower
+		number = 2*size;
+		letter = baseLetter + size + 1;
+		for (int i = 0; i < size-1; i++)
+		{
+			tempStrA = makeStringFromName(number, letter);
+			tempStrB = makeStringFromName(number - 1, letter);
+			letter++;
+			number--;
+			lineToCheck = getLine(tempStrA, tempStrB);
+			numberOfChains += numOfChainsInLine(lineToCheck);
+		}
+
+		return numberOfChains;
+	}
+
+	static string makeStringFromPos(const pair<int, int>& pos)
+	{
+		string retString = "";
+		int x = pos.first, y = pos.second;
+		retString += to_string(x);
+		retString += '_';
+		retString += to_string(y);
+		return retString;
+	}
 	static string makeStringFromName(int num, char letter)
 	{
 		string tempStr = "";
 		tempStr += letter;
-		tempStr += num;
+		
+		const int min = 48; //when grater than 57('9') then it got increased beyond 9 in code, and we want to return for example 10
+		if (num >= min)
+			num -= '0';
+		string tempInt = to_string(num);
+		tempStr += tempInt;
+		
+
 		return tempStr;
 	}
 };

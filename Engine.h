@@ -57,10 +57,10 @@ private:
 		cin >> S >> K >> GW >> GB;
 		delete board;
 
-		s = stringToInt(S);
-		k = stringToInt(K);
-		w = stringToInt(GW);
-		b = stringToInt(GB);
+		s = Board::stringToInt(S);
+		k = Board::stringToInt(K);
+		w = Board::stringToInt(GW);
+		b = Board::stringToInt(GB);
 		board = new Board(s,k,w,b);
 		string boardStatus = board->getBoardStatus();
 		if (boardStatus != BOARD_STATUS_OK)
@@ -89,33 +89,5 @@ private:
 
 		moveStatus = board->checkMove(start, end);
 		cout << moveStatus << endl << endl;
-	}
-
-	static int stringToInt(const string& str)
-	{
-		int ret = 0;
-		int sign = 1;
-		int i = 0;
-
-		if (str[0] == '-') {
-			sign = -1;
-			i++;
-		}
-		else if (str[0] == '+') {
-			i++;
-		}
-
-		while (i < str.length()) {
-			if (str[i] >= '0' && str[i] <= '9') {
-				int digit = str[i] - '0';
-				ret = ret * 10 + digit;
-			}
-			else {
-				break;
-			}
-			i++;
-		}
-
-		return ret * sign;
 	}
 };

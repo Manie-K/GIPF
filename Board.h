@@ -25,7 +25,7 @@ private:
 
 public:
 	Board(int S, int K, int GW, int GB) :size(S), maxSize(2 * S - 1), pieceCollectSize(K), outsideSize(S + 1), totalWhite(GW),
-		totalBlack(GW), gameState(GAME_STATE_PROGRESS), boardStatus("")
+		totalBlack(GB), boardStatus(""), gameState(GAME_STATE_PROGRESS)
 	{
 		string whiteP, blackP;
 		int wh, bl;
@@ -57,11 +57,11 @@ public:
 
 		for (int y = 1; y <= size; y++)
 		{
-			for (int z = 0; z < maxSize-size-(y-1); z++)
+			for (int z = 0; z < (int)maxSize-size-(y-1); z++)
 			{
 				cout << ' ';
 			}
-			for (int x = 1; x < map[y].size()-1; x++)
+			for (int x = 1; x < (int)map[y].size()-1; x++)
 			{
 				cout << map[y][x] << ' ';
 			}
@@ -73,7 +73,7 @@ public:
 			{
 				cout << ' ';
 			}
-			for (int x = 1; x < map[y].size() - 1; x++)
+			for (int x = 1; x < (int)map[y].size() - 1; x++)
 			{
 				cout << map[y][x] << ' ';
 			}
@@ -118,7 +118,7 @@ public:
 		}
 		const char color = players->getCurrent()->getColor();
 		int i = 0;
-		while (i < line.size()-1)
+		while (i < (int)line.size()-1)
 		{
 			if (map.at(line.at(i).second).at(line.at(i).first) == EMPTY_PIECE)
 				break;
@@ -137,19 +137,19 @@ public:
 		{
 			const char whiteLower = 'w', blackLower = 'b';
 			bool removal = false;
-			char color;
+			char chainColor;
 			string c, start, end;
 			cin >> c >> start >> end;
 			
 			pair<int, int> s = getPosByName(start), e = getPosByName(end);
-			color = c.at(0) == whiteLower ? WHITE_PIECE : BLACK_PIECE;
+			chainColor = c.at(0) == whiteLower ? WHITE_PIECE : BLACK_PIECE;
 
-			for (vector<pair<int, int>>& line : *collidingChains)
+			for (vector<pair<int, int>>& chain : *collidingChains)
 			{
 				if (s.first == -1) break;
-				if (thisIsChosenLine(line,s,e))
+				if (thisIsChosenLine(chain,s,e))
 				{
-					if (checkChainColor(line) != color)
+					if (checkChainColor(chain) != chainColor)
 					{
 						cout << MOVE_CHOICE_WRONG_COLOR << endl;
 						gameState = GAME_STATE_BAD_MOVE;
@@ -158,7 +158,7 @@ public:
 						delete collidingChains;
 						return false;
 					}
-					removeGivenChain(line);
+					removeGivenChain(chain);
 					removal = true;
 				}
 			}
@@ -172,9 +172,9 @@ public:
 			}
 		}
 
-		for (vector<pair<int, int>>& line : *nonCollidingChains)
+		for (vector<pair<int, int>>& chain : *nonCollidingChains)
 		{
-			removeGivenChain(line);
+			removeGivenChain(chain);
 		}
 
 		players->getCurrent()->setPieces(players->getCurrent()->getPieces() - 1);
@@ -211,7 +211,7 @@ public:
 			i++;
 		}
 
-		while (i < str.length()) {
+		while (i < (int)str.length()) {
 			if (str[i] >= '0' && str[i] <= '9') {
 				int digit = str[i] - '0';
 				ret = ret * 10 + digit;
@@ -257,7 +257,7 @@ private:
 		//check for size
 		for (int y = 0; y < size; y++)
 		{
-			if (map[y].size() != size + y || map[maxSize - y - 1].size() != size + y)
+			if ((int)map[y].size() != size + y || (int)map[maxSize - y - 1].size() != size + y)
 			{
 				boardStatus = BOARD_STATUS_SIZE;
 				return;
@@ -293,7 +293,7 @@ private:
 		loadHashMap();
 
 		//checking if chains are removed
-		int chainsNumber = checkForChains()->size();
+		int chainsNumber = (int)checkForChains()->size();
 		if (chainsNumber > 0) {
 			boardStatus = BOARD_STATUS_ERROR + to_string(chainsNumber);
 			if (chainsNumber == 1)
@@ -374,18 +374,18 @@ private:
 		int a = 0, b = 0;
 		char baseLetter = nameB.at(0);
 		const char dL = baseLetter - nameA.at(0);
-		const char middleLetter = (((2 * outsideSize) - 1)/2)+'a';
+		const char middleLetter = (((2 * (char)outsideSize) - 1)/2)+'a';
 
 		retVector.push_back(getPosByName(nameA));
 		retVector.push_back(getPosByName(nameB));
 
 		if (nameA.size() > 2 || nameB.size() > 2)
 		{
-			for (int i = 1; i < nameA.size(); i++)
+			for (int i = 1; i < (int)nameA.size(); i++)
 			{
 				a = a * 10 + nameA.at(i);
 			}
-			for (int i = 1; i < nameB.size(); i++)
+			for (int i = 1; i < (int)nameB.size(); i++)
 			{
 				b = b * 10 + nameB.at(i);
 			}
@@ -477,7 +477,7 @@ private:
 		int whiteStreak = 0, blackStreak = 0;
 		bool wS = false, bS = false;
 		
-		for (int i = 0; i < chain.size(); i++)
+		for (int i = 0; i < (int)chain.size(); i++)
 		{
 			if (map.at(chain.at(i).second).at(chain.at(i).first) == WHITE_PIECE) {
 				white++;
@@ -525,7 +525,7 @@ private:
 		bool chainFlag = false;
 		int whiteStreak=0, blackStreak = 0;
 		vector<pair<int, int>> tempChain;
-		for (int i = 0; i < line.size(); i++)
+		for (int i = 0; i < (int)line.size(); i++)
 		{
 			
 			if (map.at(line.at(i).second).at(line.at(i).first) == WHITE_PIECE)
@@ -598,7 +598,7 @@ private:
 
 		//top right to bottom left
 		number = 2*outsideSize-1;
-		letter = baseLetter+size;
+		letter = baseLetter+(char)size;
 		for (int i = 0; i < size; i++)
 		{
 			tempStrA = makeStringFromName(number, letter);
@@ -623,7 +623,7 @@ private:
 
 		//top right to bottom left, but lower
 		number = 2*size;
-		letter = baseLetter + size + 1;
+		letter = baseLetter + (char)size + 1;
 		for (int i = 0; i < size-1; i++)
 		{
 			tempStrA = makeStringFromName(number, letter);
@@ -662,19 +662,6 @@ private:
 		return retVector;
 	}
 	
-	int getCoordsCount(pair<int, int> p, vector<vector<pair<int, int>>>* set) const
-	{
-		int count = 0;
-		for (vector<pair<int, int>>& line : *set)
-		{
-			for (pair<int, int>& coords : line)
-			{
-				if (coords == p)
-					count++;
-			}
-		}
-		return count;
-	}
 	char checkChainColor(const vector<pair<int, int>>& line) const
 	{
 		int white = 0, black = 0;
@@ -696,7 +683,7 @@ private:
 		int startIndex = -1, endIndex = -1;
 		const char color = map.at(start.second).at(start.first);
 
-		for (int i = 0; i < line.size(); i++)
+		for (int i = 0; i < (int)line.size(); i++)
 		{
 			if (line.at(i) == start)
 				startIndex = i;
@@ -716,7 +703,7 @@ private:
 		
 		if (startIndex > 0) {
 			pos = line.at(startIndex - 1);
-			if (map.at(pos.second).at(pos.first) == color && startIndex < line.size() - 1) {
+			if (map.at(pos.second).at(pos.first) == color && startIndex < (int)line.size() - 1) {
 				pos = line.at(startIndex + 1);
 				if (map.at(pos.second).at(pos.first) == color)
 					return false;
@@ -724,7 +711,7 @@ private:
 		}
 		if (endIndex > 0) {
 			pos = line.at(endIndex - 1);
-			if (map.at(pos.second).at(pos.first) == color && endIndex < line.size() - 1)
+			if (map.at(pos.second).at(pos.first) == color && endIndex < (int)line.size() - 1)
 			{
 				pos = line.at(endIndex + 1);
 				if (map.at(pos.second).at(pos.first) == color)
@@ -734,6 +721,19 @@ private:
 		return true;
 	}
 
+	static int getCoordsCount(pair<int, int> p, vector<vector<pair<int, int>>>* set)
+	{
+		int count = 0;
+		for (vector<pair<int, int>>& line : *set)
+		{
+			for (pair<int, int>& coords : line)
+			{
+				if (coords == p)
+					count++;
+			}
+		}
+		return count;
+	}
 	static string makeStringFromPos(const pair<int, int>& pos)
 	{
 		string retString = "";

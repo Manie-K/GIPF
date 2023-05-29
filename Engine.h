@@ -15,17 +15,9 @@ private:
 	string gameState;
 	bool exit;
 public:
-	Engine() 
-	{
-		board = nullptr;
-		command = "";
-		exit = false;
-		gameState = GAME_STATE_PROGRESS;
-	}
-	~Engine() 
-	{
-		delete board;
-	}
+	Engine():board(nullptr),command(""), gameState(GAME_STATE_PROGRESS), exit(false){}
+	~Engine() {delete board;}
+	
 	void inputCommand() 
 	{
 		if (!(cin >> command)) {
@@ -75,17 +67,17 @@ private:
 	void printGameBoard() const
 	{
 		if (board == nullptr)
-			cout << "Plansza byla niepoprawna lub nie zostala wczytana!!!\n";
+			cout << BOARD_STATUS_EMPTY <<endl;
 		else
 			board->print();
 	}
 	void doMove()
 	{
 		string coords, start,end;
-		string moveStatus = "";
+		string moveStatus;
 		cin >> coords;
 		
-		int tmp = coords.find('-');
+		int tmp = (int)coords.find('-');
 		start = coords.substr(0, tmp);
 		end = coords.substr(tmp+1, coords.size());
 

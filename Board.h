@@ -147,7 +147,7 @@ public:
 			for (vector<pair<int, int>>& line : *collidingChains)
 			{
 				if (s.first == -1) break;
-				if ((line.at(0) == s && line.at(line.size()-1) == e) || (line.at(0) == e && line.at(line.size() - 1) == s))
+				if (thisIsChosenLine(line,s,e))
 				{
 					if (checkChainColor(line) != color)
 					{
@@ -689,6 +689,49 @@ private:
 		if (white > black) //they cant be equal 
 			return WHITE_PIECE;
 		return BLACK_PIECE;
+	}
+	bool thisIsChosenLine(const vector<pair<int, int>>& line, const pair<int, int>& start, const pair<int, int>& end)
+	{
+		pair<int, int> pos;
+		int startIndex = -1, endIndex = -1;
+		const char color = map.at(start.second).at(start.first);
+
+		for (int i = 0; i < line.size(); i++)
+		{
+			if (line.at(i) == start)
+				startIndex = i;
+			if (line.at(i) == end)
+				endIndex = i;
+		}
+		if(startIndex == -1 || endIndex == -1)
+			return false;
+		
+		const int delta = startIndex < endIndex ? 1 : -1;
+		for (int i = startIndex; i != endIndex; i += delta)
+		{
+			pos = line.at(i);
+			if (map.at(pos.second).at(pos.first) != color)
+				return false;
+		}
+		
+		if (startIndex > 0) {
+			pos = line.at(startIndex - 1);
+			if (map.at(pos.second).at(pos.first) == color && startIndex < line.size() - 1) {
+				pos = line.at(startIndex + 1);
+				if (map.at(pos.second).at(pos.first) == color)
+					return false;
+			}
+		}
+		if (endIndex > 0) {
+			pos = line.at(endIndex - 1);
+			if (map.at(pos.second).at(pos.first) == color && endIndex < line.size() - 1)
+			{
+				pos = line.at(endIndex + 1);
+				if (map.at(pos.second).at(pos.first) == color)
+					return false;
+			}
+		}
+		return true;
 	}
 
 	static string makeStringFromPos(const pair<int, int>& pos)

@@ -18,14 +18,14 @@ public:
 private:
 	const int size, maxSize, pieceCollectSize, outsideSize, totalWhite, totalBlack;
 	Players* players;
-	string boardStatus;
+	string boardStatus,gameState;
 	vector<vector<char>> map;
 	unordered_map<string, pair<int, int>> posMap;
 	unordered_map<string, string> nameMap; //first string is position written in string
 
 public:
-	Board(int S, int K, int GW, int GB):size(S),maxSize(2 * S - 1),pieceCollectSize(K),outsideSize(S+1),totalWhite(GW),
-		totalBlack(GW)
+	Board(int S, int K, int GW, int GB) :size(S), maxSize(2 * S - 1), pieceCollectSize(K), outsideSize(S + 1), totalWhite(GW),
+		totalBlack(GW), gameState(GAME_STATE_PROGRESS), boardStatus("")
 	{
 		string whiteP, blackP;
 		int wh, bl;
@@ -125,26 +125,66 @@ public:
 		}
 		map.at(endPos.second).at(endPos.first) = color;
 
-		vector<vector<pair<int, int>>>* chains = new vector<vector<pair<int, int>>>;
-		int chainsCount = checkForChains(chains);
+		vector<vector<pair<int, int>>>* nonCollidingChains = checkForChains();
+		vector<vector<pair<int, int>>>* collidingChains = setCollidingChains(nonCollidingChains);
 
-		if (chainsCount < 2)
+		if (collidingChains->size() > 0)
 		{
-			if (chainsCount == 1)
+			char color;
+			string start, end;
+			cin >> color >> start >> end;
+			pair<int, int> s = getPosByName(start), e = getPosByName(end);
+
+			if (s.first == -1 || e.first == -1)
 			{
-				removeGivenChain(chains->at(0));
+				cout << MOVE_CHOICE_WRONG_INDEX << endl;
+				gameState = GAME_STATE_BAD_MOVE;
+				delete nonCollidingChains;
+				delete collidingChains;
+				return;
 			}
-			players->getCurrent()->setPieces(players->getCurrent()->getPieces() - 1);
-			players->switchPlayers();
-		}
-		else
-		{
-			//implement 2+ chains
+
+			for (vector<pair<int, int>>& line : *collidingChains)
+			{
+				if (find(line.begin(),line.end(),s) != line.end() && find(line.begin(), line.end(), e) != line.end())
+				{
+					if (checkChainColor(line) != color)
+					{
+						cout << MOVE_CHOICE_WRONG_COLOR << endl;
+						gameState = GAME_STATE_BAD_MOVE;
+						delete nonCollidingChains;
+						delete collidingChains;
+						return;
+					}
+					removeGivenChain(line);
+				}
+			}
 		}
 
-		delete chains;
+		for (vector<pair<int, int>>& line : *nonCollidingChains)
+		{
+			removeGivenChain(line);
+		}
+
+		players->getCurrent()->setPieces(players->getCurrent()->getPieces() - 1);
+		players->switchPlayers();
+
+		if (players->getCurrent()->getPieces() <= 0)
+		{
+			if (players->getOpponent()->getColor() == WHITE_PIECE)
+				gameState = GAME_STATE_WHITE_WIN;
+			if (players->getOpponent()->getColor() == BLACK_PIECE)
+					gameState = GAME_STATE_BLACK_WIN;
+		}
+		else {
+			gameState = GAME_STATE_PROGRESS;
+		}
+
+		delete nonCollidingChains;
+		delete collidingChains;
 	}
-	
+	string getGameState() const {return gameState;}
+
 	static int stringToInt(const string& str)
 	{
 		int ret = 0;
@@ -212,11 +252,11 @@ private:
 			}
 		}
 		//check other
-		if (whiteOnMap + whiteReserve != whiteMax) {
+		if (whiteOnMap + whiteReserve > whiteMax) {
 			boardStatus = BOARD_STATUS_WHITE_COUNT;
 			return;
 		}
-		else if (blackOnMap + blackReserve != blackMax) {
+		else if (blackOnMap + blackReserve > blackMax) {
 			boardStatus = BOARD_STATUS_BLACK_COUNT;
 			return;
 		}
@@ -241,7 +281,7 @@ private:
 		loadHashMap();
 
 		//checking if chains are removed
-		int chainsNumber = checkForChains(nullptr);
+		int chainsNumber = checkForChains()->size();
 		if (chainsNumber > 0) {
 			boardStatus = BOARD_STATUS_ERROR + to_string(chainsNumber);
 			if (chainsNumber == 1)
@@ -306,14 +346,11 @@ private:
 	}
 	pair<int, int> getPosByName(const string& name) const 
 	{
-		try {
-			pair<int,int> retPair = posMap.at(name);
-			return retPair;
-		}
-		catch (const out_of_range& e)
+		if (posMap.find(name) == posMap.end())
 		{
 			return make_pair<int,int>(-1, -1);
 		}
+		return posMap.at(name);
 	}
 	
 	vector<pair<int,int>> getLine(const string& nameA, const string& nameB) const
@@ -507,10 +544,9 @@ private:
 			}
 		}
 	}
-	int checkForChains(vector<vector<pair<int, int>>>* chains) const
+	vector<vector<pair<int, int>>>* checkForChains() const
 	{
-		if (chains == nullptr)
-			chains = new vector<vector<pair<int, int>>>;
+		vector<vector<pair<int, int>>>* chains = new vector<vector<pair<int, int>>>;
 		const char baseLetter = 'a';
 		char letter = baseLetter;
 		int number = 1;
@@ -588,7 +624,61 @@ private:
 			chainsInLine(lineToCheck, chains);
 		}
 
-		return chains->size();
+		return chains;
+	}
+	vector<vector<pair<int, int>>>* setCollidingChains(vector<vector<pair<int, int>>>*& all) const
+	{
+		vector<vector<pair<int, int>>>* retVector = new vector<vector<pair<int, int>>>;
+		for (vector<pair<int, int>>& line : *all)
+		{
+			for (pair<int, int>& coords : line)
+			{
+				int count = getCoordsCount(coords,all);
+				if (count != 1)
+				{
+					retVector->push_back(line);
+				}
+			}
+		}
+		//delete colliding chains from all chains
+		vector<vector<pair<int, int>>>* tempVector = new vector<vector<pair<int, int>>>;
+
+		sort(all->begin(), all->end());
+		sort(retVector->begin(), retVector->end());
+		set_difference(all->begin(), all->end(), retVector->begin(), retVector->end(), back_inserter(*tempVector));
+
+		delete all;
+		all = tempVector;
+		return retVector;
+	}
+	
+	int getCoordsCount(pair<int, int> p, vector<vector<pair<int, int>>>* set) const
+	{
+		int count = 0;
+		for (vector<pair<int, int>>& line : *set)
+		{
+			for (pair<int, int>& coords : line)
+			{
+				if (coords == p)
+					count++;
+			}
+		}
+		return count;
+	}
+	char checkChainColor(const vector<pair<int, int>>& line) const
+	{
+		int white = 0, black = 0;
+		for (auto& point : line)
+		{
+			if (map.at(point.second).at(point.first) == WHITE_PIECE)
+				white++;
+			else if (map.at(point.second).at(point.first) == BLACK_PIECE)
+				black++;
+		}
+
+		if (white > black) //they cant be equal 
+			return WHITE_PIECE;
+		return BLACK_PIECE;
 	}
 
 	static string makeStringFromPos(const pair<int, int>& pos)

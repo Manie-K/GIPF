@@ -44,6 +44,8 @@ public:
 			printGameBoard();
 		else if (command == DO_MOVE_CMD)
 			doMove();
+		else if (command == GAME_STATE_CMD)
+			printGameState();
 	}
 	bool getExit()const { return exit;}
 	void setExit(bool value) { exit = value; }
@@ -89,5 +91,9 @@ private:
 
 		moveStatus = board->checkMove(start, end);
 		cout << moveStatus << endl << endl;
+	}
+	void printGameState() const
+	{
+		cout << board->getGameState() << endl << endl;
 	}
 };

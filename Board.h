@@ -105,12 +105,17 @@ public:
 		}
 		if(!emptyPlace)
 			return MOVE_STATUS_ROW;
-		move(line, endPos);
-		return MOVE_STATUS_OK;
+		if(move(line, endPos))
+			return MOVE_STATUS_OK;
+		return "";
 	}
 	
-	void move(vector<pair<int, int>>& line, const pair<int, int>& endPos)
+	bool move(vector<pair<int, int>>& line, const pair<int, int>& endPos)
 	{
+		vector<vector<char>> tempMap;
+		for (vector<char> innerVector : map) {
+			tempMap.push_back(innerVector);
+		}
 		const char color = players->getCurrent()->getColor();
 		int i = 0;
 		while (i < line.size()-1)
@@ -130,34 +135,40 @@ public:
 
 		if (collidingChains->size() > 0)
 		{
+			const char whiteLower = 'w', blackLower = 'b';
+			bool removal = false;
 			char color;
-			string start, end;
-			cin >> color >> start >> end;
+			string c, start, end;
+			cin >> c >> start >> end;
+			
 			pair<int, int> s = getPosByName(start), e = getPosByName(end);
-
-			if (s.first == -1 || e.first == -1)
-			{
-				cout << MOVE_CHOICE_WRONG_INDEX << endl;
-				gameState = GAME_STATE_BAD_MOVE;
-				delete nonCollidingChains;
-				delete collidingChains;
-				return;
-			}
+			color = c.at(0) == whiteLower ? WHITE_PIECE : BLACK_PIECE;
 
 			for (vector<pair<int, int>>& line : *collidingChains)
 			{
-				if (find(line.begin(),line.end(),s) != line.end() && find(line.begin(), line.end(), e) != line.end())
+				if (s.first == -1) break;
+				if ((line.at(0) == s && line.at(line.size()-1) == e) || (line.at(0) == e && line.at(line.size() - 1) == s))
 				{
 					if (checkChainColor(line) != color)
 					{
 						cout << MOVE_CHOICE_WRONG_COLOR << endl;
 						gameState = GAME_STATE_BAD_MOVE;
+						map = tempMap;
 						delete nonCollidingChains;
 						delete collidingChains;
-						return;
+						return false;
 					}
 					removeGivenChain(line);
+					removal = true;
 				}
+			}
+			if (!removal || s.first == -1 || e.first == -1) {
+				cout << MOVE_CHOICE_WRONG_INDEX << endl;
+				gameState = GAME_STATE_BAD_MOVE;
+				map = tempMap;
+				delete nonCollidingChains;
+				delete collidingChains;
+				return false;
 			}
 		}
 
@@ -182,6 +193,7 @@ public:
 
 		delete nonCollidingChains;
 		delete collidingChains;
+		return true;
 	}
 	string getGameState() const {return gameState;}
 
@@ -510,6 +522,7 @@ private:
 	}
 	void chainsInLine(const vector<pair<int, int>>& line, vector<vector<pair<int,int>>>* chains) const
 	{
+		bool chainFlag = false;
 		int whiteStreak=0, blackStreak = 0;
 		vector<pair<int, int>> tempChain;
 		for (int i = 0; i < line.size(); i++)
@@ -529,23 +542,20 @@ private:
 			}
 			else
 			{
+				if (chainFlag)
+					chains->push_back(tempChain);
 				tempChain.clear();
 				blackStreak = whiteStreak = 0;
+				chainFlag = false;
 			}
-			if (whiteStreak >= pieceCollectSize)
+			if (whiteStreak >= pieceCollectSize || blackStreak >= pieceCollectSize)
 			{
-				chains->push_back(tempChain);
-				whiteStreak = 0;
-			}
-			else if (blackStreak >= pieceCollectSize)
-			{
-				chains->push_back(tempChain);
-				blackStreak = 0;
+				chainFlag = true;
 			}
 		}
 	}
 	vector<vector<pair<int, int>>>* checkForChains() const
-	{
+{
 		vector<vector<pair<int, int>>>* chains = new vector<vector<pair<int, int>>>;
 		const char baseLetter = 'a';
 		char letter = baseLetter;

@@ -6,59 +6,26 @@ using namespace std;
 
 class Player
 {
-public:
 private:
 	char color;
 	int piecesCount;
 public:
-	Player(bool white, int piecesCount)
-	{
-		this->piecesCount = piecesCount;
-		if (white)
-			color = WHITE_PIECE;
-		else
-			color = BLACK_PIECE;
-	}
-	~Player(){}
-	int getPieces()const { return piecesCount; }
-	char getColor()const { return color; }
-	void setPieces(int p) { piecesCount = p; }
-	void setColor(char c) { color = c; }
-private:
-
+	Player(bool white, int piecesCount);
+	int getPieces()const;
+	char getColor()const;
+	void setPieces(int p);
+	void setColor(char c);
 };
 
 class Players
 {
-public:
 private:
 	Player* current;
 	Player* opponent;
 public:
-	Players(int GW, int GB, char cur)
-	{
-		current = new Player(true, GW);
-		opponent = new Player(false, GB);
-		if (cur == BLACK_PIECE)
-			switchPlayers();
-	}
-	~Players()
-	{
-		delete current;
-		current = nullptr;
-		delete opponent;
-		opponent = nullptr;
-	}
-	void switchPlayers()
-	{
-		char tempColor = current->getColor();
-		int tempPieces = current->getPieces();
-		current->setColor(opponent->getColor());
-		current->setPieces(opponent->getPieces());
-		opponent->setColor(tempColor);
-		opponent->setPieces(tempPieces);
-	}
-	Player*& getCurrent() { return current; }
-	Player*& getOpponent() { return opponent; }
-private:
+	Players(int GW, int GB, char cur);
+	~Players();
+	void switchPlayers();
+	Player*& getCurrent();
+	Player*& getOpponent();
 };

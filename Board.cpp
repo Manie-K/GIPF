@@ -29,11 +29,11 @@ void Board::print() const
 	int blackReserve = players->getCurrent()->getColor() == BLACK_PIECE ?
 		players->getCurrent()->getPieces() : players->getOpponent()->getPieces();
 
-	cout << size << ' ' << pieceCollectSize << ' ' << totalWhite << ' ' << totalBlack << '\n';
-	cout << whiteReserve << ' ' << blackReserve << ' ' << players->getCurrent()->getColor() << '\n';
+	cout << size << ' ' << pieceCollectSize << ' ' << totalWhite << ' ' << totalBlack <<endl;
+	cout << whiteReserve << ' ' << blackReserve << ' ' << players->getCurrent()->getColor() << endl;
 
-	for (int y = 1; y <= size; y++)
-	{
+	//upper
+	for (int y = 1; y <= size; y++){
 		for (int z = 0; z < (int)maxSize - size - (y - 1); z++)
 		{
 			cout << ' ';
@@ -42,10 +42,10 @@ void Board::print() const
 		{
 			cout << map[y][x] << ' ';
 		}
-		cout << '\n';
+		cout << endl;
 	}
-	for (int y = size + 1; y <= maxSize; y++)
-	{
+	//lower
+	for (int y = size + 1; y <= maxSize; y++){
 		for (int z = 1; z <= y - size; z++)
 		{
 			cout << ' ';
@@ -54,12 +54,13 @@ void Board::print() const
 		{
 			cout << map[y][x] << ' ';
 		}
-		cout << '\n';
+		cout << endl;
 	}
 }
 
 string Board::checkMove(const string& start, const string& end)
 {
+	bool emptyPlace = false;
 	pair<int, int> startPos = getPosByName(start), endPos = getPosByName(end);
 	vector<pair<int, int>> line = getLine(start, end);
 
@@ -73,9 +74,8 @@ string Board::checkMove(const string& start, const string& end)
 		return MOVE_STATUS_BAD_PREFIX + start + MOVE_STATUS_BAD_START;
 	if (map.at(endPos.second).at(endPos.first) == OUTSIDE_PIECE)
 		return MOVE_STATUS_BAD_PREFIX + end + MOVE_STATUS_BAD_DEST;
-	bool emptyPlace = false;
-	for (auto pos : line)
-	{
+	
+	for (auto pos : line){
 		if (map.at(pos.second).at(pos.first) == EMPTY_PIECE) {
 			emptyPlace = true;
 			break;
@@ -89,84 +89,51 @@ string Board::checkMove(const string& start, const string& end)
 }
 bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos)
 {
+	//copy of map in case no chain choice when required
 	vector<vector<char>> tempMap;
-	for (vector<char> innerVector : map) {
+	for (vector<char> innerVector : map)
 		tempMap.push_back(innerVector);
-	}
+	
 	const char color = players->getCurrent()->getColor();
 	int i = 0;
-	while (i < (int)line.size() - 1)
-	{
+	//move the pieces in line
+	while (i < (int)line.size() - 1){
 		if (map.at(line.at(i).second).at(line.at(i).first) == EMPTY_PIECE)
 			break;
 		i++;
 	}
-	for (; i > 0; i--)
-	{
+	for (; i > 0; i--){
 		map.at(line.at(i).second).at(line.at(i).first) = map.at(line.at(i - 1).second).at(line.at(i - 1).first);
 	}
 	map.at(endPos.second).at(endPos.first) = color;
 
+	//check chains
 	vector<vector<pair<int, int>>>* nonCollidingChains = checkForChains();
 	vector<vector<pair<int, int>>>* collidingChains = setCollidingChains(nonCollidingChains);
 
-	if (collidingChains->size() > 0)
-	{
-		const char whiteLower = 'w', blackLower = 'b';
-		bool removal = false;
-		char chainColor;
-		string c, start, end;
-		cin >> c >> start >> end;
-
-		pair<int, int> s = getPosByName(start), e = getPosByName(end);
-		chainColor = c.at(0) == whiteLower ? WHITE_PIECE : BLACK_PIECE;
-
-		for (vector<pair<int, int>>& chain : *collidingChains)
-		{
-			if (s.first == -1) break;
-			if (thisIsChosenLine(chain, s, e))
-			{
-				if (checkChainColor(chain) != chainColor)
-				{
-					cout << MOVE_CHOICE_WRONG_COLOR << endl;
-					gameState = GAME_STATE_BAD_MOVE;
-					map = tempMap;
-					delete nonCollidingChains;
-					delete collidingChains;
-					return false;
-				}
-				removeGivenChain(chain);
-				removal = true;
-			}
-		}
-		if (!removal || s.first == -1 || e.first == -1) {
-			cout << MOVE_CHOICE_WRONG_INDEX << endl;
-			gameState = GAME_STATE_BAD_MOVE;
-			map = tempMap;
+	if (collidingChains->size() > 0){ //need to the delete chosen one
+		if (!handleCollidingChains(collidingChains)){
 			delete nonCollidingChains;
 			delete collidingChains;
+			map = tempMap;
 			return false;
 		}
 	}
 
 	for (vector<pair<int, int>>& chain : *nonCollidingChains)
-	{
 		removeGivenChain(chain);
-	}
 
 	players->getCurrent()->setPieces(players->getCurrent()->getPieces() - 1);
 	players->switchPlayers();
 
-	if (players->getCurrent()->getPieces() <= 0)
-	{
+	if (players->getCurrent()->getPieces() <= 0){
 		if (players->getOpponent()->getColor() == WHITE_PIECE)
 			gameState = GAME_STATE_WHITE_WIN;
-		if (players->getOpponent()->getColor() == BLACK_PIECE)
+		else
 			gameState = GAME_STATE_BLACK_WIN;
 	}
-	else {
+	else
 		gameState = GAME_STATE_PROGRESS;
-	}
 
 	delete nonCollidingChains;
 	delete collidingChains;
@@ -179,8 +146,7 @@ void Board::load(const int whiteMax, int whiteReserve, const int blackMax, int b
 	int whiteOnMap = 0, blackOnMap = 0;
 	vector<string> charMap;
 
-	for (int i = 0; i <= maxSize; i++) //first line is ""
-	{
+	for (int i = 0; i <= maxSize; i++){
 		getline(cin, row);
 		if (row != "")
 			charMap.push_back(row);
@@ -188,40 +154,54 @@ void Board::load(const int whiteMax, int whiteReserve, const int blackMax, int b
 		blackOnMap += (int)count(row.begin(), row.end(), BLACK_PIECE);
 	}
 
-	for (int y = 0; y < maxSize; y++)
-	{
+	for (int y = 0; y < maxSize; y++){
 		vector<char> temp;
 		map.push_back(temp);
 		int rowSize = (int)charMap[y].size();
-		for (int x = 0; x < rowSize; x++)
-		{
-			if (charMap[y][x] != ' ')
-			{
-				map[y].push_back(charMap[y][x]);
-			}
+		for (int x = 0; x < rowSize; x++){
+			if (charMap.at(y)[x] != ' ')
+				map[y].push_back(charMap.at(y)[x]);
 		}
 	}
 
+	if (!isBoardOkay(boardStatus, whiteReserve,blackReserve,whiteOnMap, whiteMax, blackOnMap,blackMax))
+		return;
+
+	addOutsideOfMap();
+
+	//map ready
+	loadHashMap();
+
+	//check correctness of loaded map
+	areChainsRemovedOnLoad(boardStatus);
+}
+
+bool Board::isBoardOkay(string& status,int whiteRes, int blackRes, int whiteOnMap, int whiteMax, int blackOnMap, int blackMax)
+{
 	//check for size
 	for (int y = 0; y < size; y++)
 	{
 		if ((int)map[y].size() != size + y || (int)map[maxSize - y - 1].size() != size + y)
 		{
-			boardStatus = BOARD_STATUS_SIZE;
-			return;
+			status = BOARD_STATUS_SIZE;
+			return false;
 		}
 	}
 	//check other
-	if (whiteOnMap + whiteReserve > whiteMax) {
-		boardStatus = BOARD_STATUS_WHITE_COUNT;
-		return;
+	if (whiteOnMap + whiteRes > whiteMax) {
+		status = BOARD_STATUS_WHITE_COUNT;
+		return false;
 	}
-	else if (blackOnMap + blackReserve > blackMax) {
-		boardStatus = BOARD_STATUS_BLACK_COUNT;
-		return;
+	else if (blackOnMap + blackRes > blackMax) {
+		status = BOARD_STATUS_BLACK_COUNT;
+		return false;
 	}
 	else
-		boardStatus = BOARD_STATUS_OK;
+		status = BOARD_STATUS_OK;
+	return true;
+}
+void Board::addOutsideOfMap()
+{
 	//add side tiles
 	for (int y = 0; y < maxSize; y++)
 	{
@@ -237,10 +217,9 @@ void Board::load(const int whiteMax, int whiteReserve, const int blackMax, int b
 	}
 	map.push_back(temp2);
 	map.insert(map.begin(), temp1);
-	//map ready
-	loadHashMap();
-
-	//checking if chains are removed
+}
+void Board::areChainsRemovedOnLoad(string& status)
+{
 	int chainsNumber = (int)checkForChains()->size();
 	if (chainsNumber > 0) {
 		boardStatus = BOARD_STATUS_ERROR + to_string(chainsNumber);
@@ -250,6 +229,7 @@ void Board::load(const int whiteMax, int whiteReserve, const int blackMax, int b
 			boardStatus += BOARD_STATUS_CHAINS_MULTIPLE;
 	}
 }
+
 void Board::loadHashMap()
 {
 	const int letterCount = 2 * (outsideSize)-1;
@@ -319,8 +299,7 @@ vector<pair<int, int>> Board::getLine(const string& nameA, const string& nameB) 
 	vector<pair<int, int>> retVector;
 	pair<int, int> tempPair;
 	string tempStr = "";
-	int dN = 0;
-	int a = 0, b = 0;
+	int dN = 0, a = 0, b = 0;
 	char baseLetter = nameB.at(0);
 	const char dL = baseLetter - nameA.at(0);
 	const char middleLetter = (((2 * (char)outsideSize) - 1) / 2) + 'a';
@@ -328,30 +307,23 @@ vector<pair<int, int>> Board::getLine(const string& nameA, const string& nameB) 
 	retVector.push_back(getPosByName(nameA));
 	retVector.push_back(getPosByName(nameB));
 
-	if (nameA.size() > 2 || nameB.size() > 2)
-	{
+	if (nameA.size() > 2 || nameB.size() > 2){
 		for (int i = 1; i < (int)nameA.size(); i++)
-		{
 			a = a * 10 + nameA.at(i);
-		}
 		for (int i = 1; i < (int)nameB.size(); i++)
-		{
 			b = b * 10 + nameB.at(i);
-		}
 	}
-	else
-	{
+	else{
 		a = nameA.at(1);
 		b = nameB.at(1);
 	}
 	dN = b - a;
 
-	//6 cases
+	// diagonal /
 	if (dL == 0 && (dN == 1 || dN == -1))
 	{
 		tempPair = getPosByName(nameB);
-		while (tempPair.first != -1)
-		{
+		while (tempPair.first != -1){
 			b += dN;
 			tempStr = makeStringFromName(b, baseLetter);
 			tempPair = getPosByName(tempStr);
@@ -359,11 +331,10 @@ vector<pair<int, int>> Board::getLine(const string& nameA, const string& nameB) 
 				retVector.push_back(tempPair);
 		}
 	}
-	else if (dL == 1 && dN == 1)
-	{
+	// ->
+	else if (dL == 1 && dN == 1){
 		tempPair = getPosByName(nameB);
-		while (tempPair.first != -1)
-		{
+		while (tempPair.first != -1){
 			if (baseLetter < middleLetter)
 				b += dN;
 			baseLetter += dL;
@@ -373,11 +344,10 @@ vector<pair<int, int>> Board::getLine(const string& nameA, const string& nameB) 
 				retVector.push_back(tempPair);
 		}
 	}
-	else if (dL == 1 && dN == 0)
-	{
+	// diagonal \ to bottom
+	else if (dL == 1 && dN == 0){
 		tempPair = getPosByName(nameB);
-		while (tempPair.first != -1)
-		{
+		while (tempPair.first != -1){
 			baseLetter += dL;
 			if (baseLetter > middleLetter)
 				b -= 1;
@@ -387,11 +357,10 @@ vector<pair<int, int>> Board::getLine(const string& nameA, const string& nameB) 
 				retVector.push_back(tempPair);
 		}
 	}
-	else if (dL == -1 && dN == 0)
-	{
+	// <-
+	else if (dL == -1 && dN == 0){
 		tempPair = getPosByName(nameB);
-		while (tempPair.first != -1)
-		{
+		while (tempPair.first != -1){
 			baseLetter += dL;
 			if (baseLetter < middleLetter)
 				b -= 1;
@@ -401,11 +370,10 @@ vector<pair<int, int>> Board::getLine(const string& nameA, const string& nameB) 
 				retVector.push_back(tempPair);
 		}
 	}
-	else if (dL == -1 && dN == 1)
-	{
+	// diagonal \ to top
+	else if (dL == -1 && dN == 1){
 		tempPair = getPosByName(nameB);
-		while (tempPair.first != -1)
-		{
+		while (tempPair.first != -1){
 			if (baseLetter > middleLetter)
 				b += dN;
 			baseLetter += dL;
@@ -415,6 +383,7 @@ vector<pair<int, int>> Board::getLine(const string& nameA, const string& nameB) 
 				retVector.push_back(tempPair);
 		}
 	}
+	// no such line
 	else retVector.clear();
 
 	return retVector;
@@ -422,12 +391,10 @@ vector<pair<int, int>> Board::getLine(const string& nameA, const string& nameB) 
 
 void Board::removeGivenChain(const vector<pair<int, int>>& chain)
 {
-	int white = 0, black = 0;
-	int whiteStreak = 0, blackStreak = 0;
+	int white = 0, black = 0, whiteStreak = 0, blackStreak = 0;
 	bool wS = false, bS = false;
 
-	for (int i = 0; i < (int)chain.size(); i++)
-	{
+	for (int i = 0; i < (int)chain.size(); i++){
 		if (map.at(chain.at(i).second).at(chain.at(i).first) == WHITE_PIECE) {
 			white++;
 			whiteStreak++;
@@ -445,29 +412,49 @@ void Board::removeGivenChain(const vector<pair<int, int>>& chain)
 			bS = true;
 	}
 	//handle player pieces
-	if (players->getCurrent()->getColor() == WHITE_PIECE)//current white
-	{
+	if (players->getCurrent()->getColor() == WHITE_PIECE){
 		if (wS)
-		{
 			players->getCurrent()->setPieces(players->getCurrent()->getPieces() + white);
-		}
 		else if (bS)
-		{
 			players->getOpponent()->setPieces(players->getOpponent()->getPieces() + black);
-		}
 	}
-	else //current black
-	{
+	else{
 		if (wS)
-		{
 			players->getOpponent()->setPieces(players->getOpponent()->getPieces() + white);
-		}
 		else if (bS)
-		{
 			players->getCurrent()->setPieces(players->getCurrent()->getPieces() + black);
-		}
 	}
 
+}
+bool Board::handleCollidingChains(vector<vector<pair<int, int>>>* collidingChains)
+{
+	const char whiteLower = 'w', blackLower = 'b';
+	bool removal = false;
+	char chainColor;
+	string c, start, end;
+	cin >> c >> start >> end;
+
+	pair<int, int> s = getPosByName(start), e = getPosByName(end);
+	chainColor = c.at(0) == whiteLower ? WHITE_PIECE : BLACK_PIECE;
+
+	for (vector<pair<int, int>>& chain : *collidingChains) {
+		if (s.first == -1) break;
+		if (thisIsChosenLine(chain, s, e)) {
+			if (checkChainColor(chain) != chainColor) {
+				cout << MOVE_CHOICE_WRONG_COLOR << endl;
+				gameState = GAME_STATE_BAD_MOVE;
+				return false;
+			}
+			removeGivenChain(chain);
+			removal = true;
+		}
+	}
+	if (!removal || s.first == -1 || e.first == -1) {
+		cout << MOVE_CHOICE_WRONG_INDEX << endl;
+		gameState = GAME_STATE_BAD_MOVE;
+		return false;
+	}
+	return true;
 }
 
 void Board::chainsInLine(const vector<pair<int, int>>& line, vector<vector<pair<int, int>>>* chains) const
@@ -475,37 +462,34 @@ void Board::chainsInLine(const vector<pair<int, int>>& line, vector<vector<pair<
 	bool chainFlag = false;
 	int whiteStreak = 0, blackStreak = 0;
 	vector<pair<int, int>> tempChain;
-	for (int i = 0; i < (int)line.size(); i++)
-	{
 
-		if (map.at(line.at(i).second).at(line.at(i).first) == WHITE_PIECE)
-		{
+	for (int i = 0; i < (int)line.size(); i++){
+
+		if (map.at(line.at(i).second).at(line.at(i).first) == WHITE_PIECE){
 			whiteStreak++;
 			blackStreak = 0;
 			tempChain.push_back(line.at(i));
 		}
-		else if (map.at(line.at(i).second).at(line.at(i).first) == BLACK_PIECE)
-		{
+		else if (map.at(line.at(i).second).at(line.at(i).first) == BLACK_PIECE){
 			blackStreak++;
 			whiteStreak = 0;
 			tempChain.push_back(line.at(i));
 		}
-		else
-		{
+		else{
 			if (chainFlag)
 				chains->push_back(tempChain);
 			tempChain.clear();
 			blackStreak = whiteStreak = 0;
 			chainFlag = false;
 		}
-		if (whiteStreak >= pieceCollectSize || blackStreak >= pieceCollectSize)
-		{
+		if (whiteStreak >= pieceCollectSize || blackStreak >= pieceCollectSize){
 			chainFlag = true;
 		}
 	}
 }
 vector<vector<pair<int, int>>>* Board::checkForChains() const
 {
+	//checks all possible chains
 	vector<vector<pair<int, int>>>* chains = new vector<vector<pair<int, int>>>;
 	const char baseLetter = 'a';
 	char letter = baseLetter;
@@ -589,15 +573,11 @@ vector<vector<pair<int, int>>>* Board::checkForChains() const
 vector<vector<pair<int, int>>>* Board::setCollidingChains(vector<vector<pair<int, int>>>*& all) const
 {
 	vector<vector<pair<int, int>>>* retVector = new vector<vector<pair<int, int>>>;
-	for (vector<pair<int, int>>& line : *all)
-	{
-		for (pair<int, int>& coords : line)
-		{
+	for (vector<pair<int, int>>& line : *all){
+		for (pair<int, int>& coords : line){
 			int count = getCoordsCount(coords, all);
 			if (count != 1)
-			{
 				retVector->push_back(line);
-			}
 		}
 	}
 	//delete colliding chains from all chains
@@ -614,17 +594,18 @@ vector<vector<pair<int, int>>>* Board::setCollidingChains(vector<vector<pair<int
 char Board::checkChainColor(const vector<pair<int, int>>& line) const
 {
 	int white = 0, black = 0;
-	for (auto& point : line)
-	{
+	for (auto& point : line){
 		if (map.at(point.second).at(point.first) == WHITE_PIECE)
 			white++;
 		else if (map.at(point.second).at(point.first) == BLACK_PIECE)
 			black++;
+		//there cant be 2 different collor chains in given line
+		if (white >= pieceCollectSize)
+			return WHITE_PIECE;
+		else if (black >= pieceCollectSize)
+			return BLACK_PIECE;
 	}
-
-	if (white > black) //they cant be equal 
-		return WHITE_PIECE;
-	return BLACK_PIECE;
+	return '?';
 }
 
 bool Board::thisIsChosenLine(const vector<pair<int, int>>& line, const pair<int, int>& start, const pair<int, int>& end)
@@ -633,8 +614,7 @@ bool Board::thisIsChosenLine(const vector<pair<int, int>>& line, const pair<int,
 	int startIndex = -1, endIndex = -1;
 	const char color = map.at(start.second).at(start.first);
 
-	for (int i = 0; i < (int)line.size(); i++)
-	{
+	for (int i = 0; i < (int)line.size(); i++){
 		if (line.at(i) == start)
 			startIndex = i;
 		if (line.at(i) == end)
@@ -644,8 +624,7 @@ bool Board::thisIsChosenLine(const vector<pair<int, int>>& line, const pair<int,
 		return false;
 
 	const int delta = startIndex < endIndex ? 1 : -1;
-	for (int i = startIndex; i != endIndex; i += delta)
-	{
+	for (int i = startIndex; i != endIndex; i += delta){
 		pos = line.at(i);
 		if (map.at(pos.second).at(pos.first) != color)
 			return false;
@@ -674,10 +653,8 @@ bool Board::thisIsChosenLine(const vector<pair<int, int>>& line, const pair<int,
 int Board::getCoordsCount(pair<int, int> p, vector<vector<pair<int, int>>>* set)
 {
 	int count = 0;
-	for (vector<pair<int, int>>& line : *set)
-	{
-		for (pair<int, int>& coords : line)
-		{
+	for (vector<pair<int, int>>& line : *set){
+		for (pair<int, int>& coords : line){
 			if (coords == p)
 				count++;
 		}
@@ -704,15 +681,12 @@ string Board::makeStringFromName(int num, char letter)
 	string tempInt = to_string(num);
 	tempStr += tempInt;
 
-
 	return tempStr;
 }
 
 int Board::stringToInt(const string& str)
 {
-	int ret = 0;
-	int sign = 1;
-	int i = 0;
+	int ret = 0, sign = 1, i = 0;
 
 	if (str[0] == '-') {
 		sign = -1;

@@ -1,11 +1,11 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <list>
 #include <unordered_map>
 #include <algorithm>
 #include <iostream>
 #include "Players.h"
-//#include "Engine.h"
 
 using namespace std;
 
@@ -36,13 +36,17 @@ public:
 private:
 	void load(const int whiteMax, int whiteReserve, const int blackMax, int blackReserve);
 	void loadHashMap();
-	
+	bool isBoardOkay(string& status, int whiteRes, int blackRes, int whiteOnMap, int whiteMax, int blackOnMap, int blackMax);
+	void addOutsideOfMap();
+	void areChainsRemovedOnLoad(string& status);
+
 	string getNameByPos(const pair<int, int>& pos) const;
 	pair<int, int> getPosByName(const string& name) const;
 	
 	vector<pair<int, int>> getLine(const string& nameA, const string& nameB) const;
 
 	void removeGivenChain(const vector<pair<int, int>>& chain);
+	bool handleCollidingChains(vector<vector<pair<int, int>>>* collidingChains);
 
 	void chainsInLine(const vector<pair<int, int>>& line, vector<vector<pair<int, int>>>* chains) const;
 	vector<vector<pair<int, int>>>* checkForChains() const;

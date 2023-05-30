@@ -47,7 +47,7 @@ void Engine::loadGame()
 		delete board;
 		board = nullptr;
 	}
-	cout << boardStatus << "\n\n";
+	cout << boardStatus << endl << endl;
 }
 void Engine::printGameBoard() const
 {
@@ -62,8 +62,7 @@ void Engine::printGameState() const
 }
 void Engine::doMove()
 {
-	string coords, start, end;
-	string moveStatus;
+	string coords, start, end, moveStatus;
 	cin >> coords;
 
 	int tmp = (int)coords.find('-');

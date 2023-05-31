@@ -24,9 +24,13 @@ void Engine::executeCommand()
 	else if (command == GAME_STATE_CMD)
 		printGameState();
 	else if (command == ALL_MOVES_CMD)
-		allMoves(false);
+		allMoves(false, false);
 	else if (command == ALL_MOVES_NUMBER_CMD)
-		allMoves(true);
+		allMoves(true, false);
+	else if (command == ALL_MOVES_WIN_CMD)
+		allMoves(false, true);
+	else if (command == ALL_MOVES_WIN_NUMBER_CMD)
+		allMoves(true, true);
 }
 
 bool Engine::getExit()const { return exit; }
@@ -73,21 +77,21 @@ void Engine::doMove()
 	start = coords.substr(0, tmp);
 	end = coords.substr(tmp + 1, coords.size());
 
-	moveStatus = board->checkMove(start, end);
+	moveStatus = board->checkMove(start, end,false);
 	cout << moveStatus << endl << endl;
 }
 
-void Engine::allMoves(bool justNumber)
+void Engine::allMoves(bool justNumber, bool justWinning)
 {
 	unordered_map<string, vector<vector<char>>>* uniqueMaps = new unordered_map<string, vector<vector<char>>>;
-	if (board != nullptr){
-		board->getAllMoves(uniqueMaps);
-	}
-	if (justNumber){
-		cout << uniqueMaps->size() << UNIQUE_MOVES_NUMBER;
-		return;
-	}
-	for (const auto& tempPair : *uniqueMaps){
-		cout << tempPair.first << endl;
+	if (board != nullptr) {
+		board->getAllMoves(uniqueMaps, justWinning);
+		if (justNumber) {
+			cout << uniqueMaps->size() << UNIQUE_MOVES_NUMBER << endl;
+			return;
+		}
+		for (const auto& tempPair : *uniqueMaps) {
+			cout << tempPair.first << endl;
+		}
 	}
 }

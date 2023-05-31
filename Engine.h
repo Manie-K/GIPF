@@ -26,5 +26,5 @@ private:
 	void printGameBoard() const;
 	void printGameState() const;
 	void doMove();
-	void allMoves(bool justNumber);
+	void allMoves(bool justNumber, bool justWinning);
 };

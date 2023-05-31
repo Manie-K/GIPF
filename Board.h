@@ -29,8 +29,8 @@ public:
 	
 	void print() const;
 	
-	string checkMove(const string& start, const string& end, unordered_map<string, vector<vector<char>>>* uniqueMaps = nullptr);
-	void getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps);
+	string checkMove(const string& start, const string& end, bool justWinning, bool* gameWon = nullptr, unordered_map<string, vector<vector<char>>>* uniqueMaps = nullptr);
+	void getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps, bool justWinning);
 
 	static int stringToInt(const string& str);
 private:
@@ -44,7 +44,7 @@ private:
 	pair<int, int> getPosByName(const string& name) const;
 	
 	bool move(vector<pair<int, int>>& line, const pair<int, int>& endPos, 
-		const string& key, unordered_map<string, vector<vector<char>>>* uniqueMaps = nullptr);
+		const string& key, bool justWinning, bool* gameWon=nullptr, unordered_map<string, vector<vector<char>>>* uniqueMaps = nullptr);
 	bool checkIfIsUniqueMap(unordered_map<string, vector<vector<char>>>*& uniqueMaps,const  vector<vector<char>> tempMap) const;
 
 	vector<pair<int, int>> getLine(const string& nameA, const string& nameB) const;

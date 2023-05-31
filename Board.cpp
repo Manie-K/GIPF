@@ -58,7 +58,7 @@ void Board::print() const
 	}
 }
 
-string Board::checkMove(const string& start, const string& end,unordered_map<string, vector<vector<char>>>* uniqueMaps)
+string Board::checkMove(const string& start, const string& end, bool justWinning,bool *gameWon ,unordered_map<string, vector<vector<char>>>* uniqueMaps)
 {
 	bool emptyPlace = false;
 	pair<int, int> startPos = getPosByName(start), endPos = getPosByName(end);
@@ -85,16 +85,17 @@ string Board::checkMove(const string& start, const string& end,unordered_map<str
 		return MOVE_STATUS_ROW;
 	//if the move was bad, then uniqeMaps wont save this move
 
-	if (move(line, endPos, start + " " + end, uniqueMaps))
+	if (move(line, endPos, start + " " + end, justWinning, gameWon,uniqueMaps))
 		return MOVE_STATUS_OK;
 	return "";
 }
-void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps)
+void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps, bool justWinning)
 {
 	string start, end;
+	bool* win = new bool(false);
 	const char baseLetter = 'a';
 	const char middleLetter = (2 * outsideSize - 1)/2 + baseLetter;
-	const char lastLetter = (2 * outsideSize - 1) + baseLetter;
+	const char lastLetter = (2 * outsideSize - 1) + baseLetter-1;
 
 	char letter = baseLetter;
 	//left top
@@ -102,9 +103,11 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 	{
 		start = makeStringFromName(num, baseLetter);
 		end = makeStringFromName(num+1, baseLetter+1);
-		checkMove(start, end, uniqueMaps);
+		checkMove(start, end,justWinning, win,uniqueMaps);
+		if (*win) return;
 		end = makeStringFromName(num, baseLetter+1);
-		checkMove(start, end, uniqueMaps);
+		checkMove(start, end,justWinning, win, uniqueMaps);
+		if (*win) return;
 	}
 	//left bottom
 	letter = baseLetter;
@@ -113,11 +116,13 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 		letter++;
 		start = makeStringFromName(1, letter);
 		end = makeStringFromName(2, letter);
-		checkMove(start, end, uniqueMaps);
+		checkMove(start, end,justWinning, win, uniqueMaps);
+		if (*win) return;
 		if (letter < middleLetter)
 		{
 			end = makeStringFromName(2, letter + 1);
-			checkMove(start, end, uniqueMaps);
+			checkMove(start, end,justWinning, win, uniqueMaps);
+			if (*win) return;
 		}
 	}
 	//bottom
@@ -125,11 +130,13 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 	for (int num = 1; num <= outsideSize; num++)
 	{
 		start = makeStringFromName(1, letter);
-		end = makeStringFromName(2, letter + 1);
-		checkMove(start, end, uniqueMaps);
+		end = makeStringFromName(2, letter);
+		checkMove(start, end,justWinning, win, uniqueMaps);
+		if (*win) return;
 		if (letter > middleLetter) {
 			end = makeStringFromName(2, letter - 1);
-			checkMove(start, end, uniqueMaps);
+			checkMove(start, end,justWinning, win, uniqueMaps);
+			if (*win) return;
 		}
 		letter++;
 	}
@@ -139,22 +146,25 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 	{
 		start = makeStringFromName(num, letter);
 		end = makeStringFromName(num, letter - 1);
-		checkMove(start, end, uniqueMaps);
+		checkMove(start, end,justWinning, win, uniqueMaps);
+		if (*win) return;
 		end = makeStringFromName(num+1, letter - 1);
-		checkMove(start, end, uniqueMaps);
-		letter++;
+		checkMove(start, end,justWinning, win, uniqueMaps);
+		if (*win) return;
 	}
 	//right top
 	letter = lastLetter;
-	for (int num = 1; num < outsideSize; num++)
+	for (int num = 1; num <= outsideSize; num++)
 	{
-		const int tempSize = outsideSize + num - 1;
+		const int tempSize = outsideSize + num ;
 		letter--;
 		start = makeStringFromName(tempSize, letter);
 		end = makeStringFromName(tempSize-1, letter);
-		checkMove(start, end, uniqueMaps);
+		checkMove(start, end,justWinning, win, uniqueMaps);
+		if (*win) return;
 		end = makeStringFromName(tempSize, letter-1);
-		checkMove(start, end, uniqueMaps);
+		checkMove(start, end,justWinning, win, uniqueMaps);
+		if (*win) return;
 	}
 	//top
 	letter = middleLetter;
@@ -164,14 +174,16 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 		letter--;
 		start = makeStringFromName(tempSize, letter);
 		end = makeStringFromName(tempSize, letter+1);
-		checkMove(start, end, uniqueMaps);
-		end = makeStringFromName(tempSize-1, letter - 1);
-		checkMove(start, end, uniqueMaps);
+		checkMove(start, end,justWinning, win, uniqueMaps);
+		if (*win) return;
+		end = makeStringFromName(tempSize-1, letter);
+		checkMove(start, end,justWinning, win, uniqueMaps);
+		if (*win) return;
 	}
 }
 
 bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos, 
-	const string& key,unordered_map<string, vector<vector<char>>>* uniqueMaps)
+	const string& key,bool justWinning, bool* gameWon, unordered_map<string, vector<vector<char>>>* uniqueMaps)
 {
 	//copy of map in case no chain choice when required
 	vector<vector<char>> tempMap;
@@ -208,10 +220,14 @@ bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos,
 		removeGivenChain(chain);
 
 
-	if (uniqueMaps != nullptr) //we aren't doing real move, just checking
-	{
-		if (checkIfIsUniqueMap(uniqueMaps, map))
-		{
+	if (uniqueMaps != nullptr){ //we aren't doing real move, just checking
+		if (checkIfIsUniqueMap(uniqueMaps, map)){
+			if (justWinning && players->getOpponent()->getPieces() <= 0){
+				//winning move
+				if (gameWon != nullptr)
+					*gameWon = true;
+				uniqueMaps->clear();
+			}
 			uniqueMaps->insert(make_pair(key, map));
 		}
 		delete nonCollidingChains;

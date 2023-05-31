@@ -89,6 +89,86 @@ string Board::checkMove(const string& start, const string& end,unordered_map<str
 		return MOVE_STATUS_OK;
 	return "";
 }
+void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps)
+{
+	string start, end;
+	const char baseLetter = 'a';
+	const char middleLetter = (2 * outsideSize - 1)/2 + baseLetter;
+	const char lastLetter = (2 * outsideSize - 1) + baseLetter;
+
+	char letter = baseLetter;
+	//left top
+	for (int num = 1; num <= outsideSize; num++)
+	{
+		start = makeStringFromName(num, baseLetter);
+		end = makeStringFromName(num+1, baseLetter+1);
+		checkMove(start, end, uniqueMaps);
+		end = makeStringFromName(num, baseLetter+1);
+		checkMove(start, end, uniqueMaps);
+	}
+	//left bottom
+	letter = baseLetter;
+	for (int num = 1; num < outsideSize; num++)
+	{
+		letter++;
+		start = makeStringFromName(1, letter);
+		end = makeStringFromName(2, letter);
+		checkMove(start, end, uniqueMaps);
+		if (letter < middleLetter)
+		{
+			end = makeStringFromName(2, letter + 1);
+			checkMove(start, end, uniqueMaps);
+		}
+	}
+	//bottom
+	letter = middleLetter;
+	for (int num = 1; num <= outsideSize; num++)
+	{
+		start = makeStringFromName(1, letter);
+		end = makeStringFromName(2, letter + 1);
+		checkMove(start, end, uniqueMaps);
+		if (letter > middleLetter) {
+			end = makeStringFromName(2, letter - 1);
+			checkMove(start, end, uniqueMaps);
+		}
+		letter++;
+	}
+	//right bottom
+	letter = lastLetter;
+	for (int num = 1; num <= outsideSize; num++)
+	{
+		start = makeStringFromName(num, letter);
+		end = makeStringFromName(num, letter - 1);
+		checkMove(start, end, uniqueMaps);
+		end = makeStringFromName(num+1, letter - 1);
+		checkMove(start, end, uniqueMaps);
+		letter++;
+	}
+	//right top
+	letter = lastLetter;
+	for (int num = 1; num < outsideSize; num++)
+	{
+		const int tempSize = outsideSize + num - 1;
+		letter--;
+		start = makeStringFromName(tempSize, letter);
+		end = makeStringFromName(tempSize-1, letter);
+		checkMove(start, end, uniqueMaps);
+		end = makeStringFromName(tempSize, letter-1);
+		checkMove(start, end, uniqueMaps);
+	}
+	//top
+	letter = middleLetter;
+	for (int num = 1; num <= outsideSize-2; num++)
+	{
+		const int tempSize = 2*outsideSize-1-num;
+		letter--;
+		start = makeStringFromName(tempSize, letter);
+		end = makeStringFromName(tempSize, letter+1);
+		checkMove(start, end, uniqueMaps);
+		end = makeStringFromName(tempSize-1, letter - 1);
+		checkMove(start, end, uniqueMaps);
+	}
+}
 
 bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos, 
 	const string& key,unordered_map<string, vector<vector<char>>>* uniqueMaps)
@@ -156,29 +236,30 @@ bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos,
 	delete collidingChains;
 	return true;
 }
+
 bool Board::checkIfIsUniqueMap(unordered_map<string, vector<vector<char>>>*& uniqueMaps,const  vector<vector<char>> tempMap) const
 {
-	bool alreadyExists = true;
+	if (uniqueMaps->empty())
+		return true;
 
-	for ( const pair<string, vector<vector<char>>>& pair : *uniqueMaps)
-	{
+	for ( const pair<string, vector<vector<char>>>& pair : *uniqueMaps){
 		const vector<vector<char>> givenMap = pair.second;
-		if (givenMap.size() != tempMap.size())
-		{
-			alreadyExists = false;
-			break;
+		if (givenMap.size() != tempMap.size()){
+			continue;
 		}
-		for (int i = 0; i < givenMap.size(); i++)
-		{
-			if (givenMap.at(i) != tempMap.at(i))
-			{
-				alreadyExists = false;
-				break;
+		bool isUnique = false;
+		for (int i = 0; i < givenMap.size(); i++){
+			for (int j = 0; j < givenMap.at(i).size(); j++) {
+				if (givenMap.at(i).at(j) != tempMap.at(i).at(j)){
+					isUnique = true;
+					break;
+				}
 			}
 		}	
+		if (!isUnique)
+			return false;
 	}
-
-	return alreadyExists;
+	return true;
 }
 
 void Board::load(const int whiteMax, int whiteReserve, const int blackMax, int blackReserve)

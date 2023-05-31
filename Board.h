@@ -30,6 +30,7 @@ public:
 	void print() const;
 	
 	string checkMove(const string& start, const string& end, unordered_map<string, vector<vector<char>>>* uniqueMaps = nullptr);
+	void getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps);
 
 	static int stringToInt(const string& str);
 private:

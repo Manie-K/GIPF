@@ -80,10 +80,8 @@ void Engine::doMove()
 void Engine::allMoves(bool justNumber)
 {
 	unordered_map<string, vector<vector<char>>>* uniqueMaps = new unordered_map<string, vector<vector<char>>>;
-	string start, end;
 	if (board != nullptr){
-		//get all starts,ends
-		board->checkMove(start, end, uniqueMaps);
+		board->getAllMoves(uniqueMaps);
 	}
 	if (justNumber){
 		cout << uniqueMaps->size() << UNIQUE_MOVES_NUMBER;

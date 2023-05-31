@@ -29,20 +29,23 @@ public:
 	
 	void print() const;
 	
-	string checkMove(const string& start, const string& end);
-	bool move(vector<pair<int, int>>& line, const pair<int, int>& endPos);
+	string checkMove(const string& start, const string& end, unordered_map<string, vector<vector<char>>>* uniqueMaps = nullptr);
 
 	static int stringToInt(const string& str);
 private:
 	void load(const int whiteMax, int whiteReserve, const int blackMax, int blackReserve);
 	void loadHashMap();
-	bool isBoardOkay(string& status, int whiteRes, int blackRes, int whiteOnMap, int whiteMax, int blackOnMap, int blackMax);
+	bool isBoardOkay(int whiteRes, int blackRes, int whiteOnMap, int whiteMax, int blackOnMap, int blackMax);
 	void addOutsideOfMap();
-	void areChainsRemovedOnLoad(string& status);
+	void areChainsRemovedOnLoad();
 
 	string getNameByPos(const pair<int, int>& pos) const;
 	pair<int, int> getPosByName(const string& name) const;
 	
+	bool move(vector<pair<int, int>>& line, const pair<int, int>& endPos, 
+		const string& key, unordered_map<string, vector<vector<char>>>* uniqueMaps = nullptr);
+	bool checkIfIsUniqueMap(unordered_map<string, vector<vector<char>>>*& uniqueMaps,const  vector<vector<char>> tempMap) const;
+
 	vector<pair<int, int>> getLine(const string& nameA, const string& nameB) const;
 
 	void removeGivenChain(const vector<pair<int, int>>& chain);

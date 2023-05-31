@@ -58,7 +58,7 @@ void Board::print() const
 	}
 }
 
-string Board::checkMove(const string& start, const string& end)
+string Board::checkMove(const string& start, const string& end,unordered_map<string, vector<vector<char>>>* uniqueMaps)
 {
 	bool emptyPlace = false;
 	pair<int, int> startPos = getPosByName(start), endPos = getPosByName(end);
@@ -83,11 +83,15 @@ string Board::checkMove(const string& start, const string& end)
 	}
 	if (!emptyPlace)
 		return MOVE_STATUS_ROW;
-	if (move(line, endPos))
+	//if the move was bad, then uniqeMaps wont save this move
+
+	if (move(line, endPos, start + " " + end, uniqueMaps))
 		return MOVE_STATUS_OK;
 	return "";
 }
-bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos)
+
+bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos, 
+	const string& key,unordered_map<string, vector<vector<char>>>* uniqueMaps)
 {
 	//copy of map in case no chain choice when required
 	vector<vector<char>> tempMap;
@@ -123,6 +127,19 @@ bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos)
 	for (vector<pair<int, int>>& chain : *nonCollidingChains)
 		removeGivenChain(chain);
 
+
+	if (uniqueMaps != nullptr) //we aren't doing real move, just checking
+	{
+		if (checkIfIsUniqueMap(uniqueMaps, map))
+		{
+			uniqueMaps->insert(make_pair(key, map));
+		}
+		delete nonCollidingChains;
+		delete collidingChains;
+		map = tempMap;
+		return false;
+	}
+
 	players->getCurrent()->setPieces(players->getCurrent()->getPieces() - 1);
 	players->switchPlayers();
 
@@ -138,6 +155,30 @@ bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos)
 	delete nonCollidingChains;
 	delete collidingChains;
 	return true;
+}
+bool Board::checkIfIsUniqueMap(unordered_map<string, vector<vector<char>>>*& uniqueMaps,const  vector<vector<char>> tempMap) const
+{
+	bool alreadyExists = true;
+
+	for ( const pair<string, vector<vector<char>>>& pair : *uniqueMaps)
+	{
+		const vector<vector<char>> givenMap = pair.second;
+		if (givenMap.size() != tempMap.size())
+		{
+			alreadyExists = false;
+			break;
+		}
+		for (int i = 0; i < givenMap.size(); i++)
+		{
+			if (givenMap.at(i) != tempMap.at(i))
+			{
+				alreadyExists = false;
+				break;
+			}
+		}	
+	}
+
+	return alreadyExists;
 }
 
 void Board::load(const int whiteMax, int whiteReserve, const int blackMax, int blackReserve)
@@ -164,7 +205,7 @@ void Board::load(const int whiteMax, int whiteReserve, const int blackMax, int b
 		}
 	}
 
-	if (!isBoardOkay(boardStatus, whiteReserve,blackReserve,whiteOnMap, whiteMax, blackOnMap,blackMax))
+	if (!isBoardOkay( whiteReserve,blackReserve,whiteOnMap, whiteMax, blackOnMap,blackMax))
 		return;
 
 	addOutsideOfMap();
@@ -173,31 +214,31 @@ void Board::load(const int whiteMax, int whiteReserve, const int blackMax, int b
 	loadHashMap();
 
 	//check correctness of loaded map
-	areChainsRemovedOnLoad(boardStatus);
+	areChainsRemovedOnLoad();
 }
 
-bool Board::isBoardOkay(string& status,int whiteRes, int blackRes, int whiteOnMap, int whiteMax, int blackOnMap, int blackMax)
+bool Board::isBoardOkay(int whiteRes, int blackRes, int whiteOnMap, int whiteMax, int blackOnMap, int blackMax)
 {
 	//check for size
 	for (int y = 0; y < size; y++)
 	{
 		if ((int)map[y].size() != size + y || (int)map[maxSize - y - 1].size() != size + y)
 		{
-			status = BOARD_STATUS_SIZE;
+			boardStatus = BOARD_STATUS_SIZE;
 			return false;
 		}
 	}
 	//check other
 	if (whiteOnMap + whiteRes > whiteMax) {
-		status = BOARD_STATUS_WHITE_COUNT;
+		boardStatus = BOARD_STATUS_WHITE_COUNT;
 		return false;
 	}
 	else if (blackOnMap + blackRes > blackMax) {
-		status = BOARD_STATUS_BLACK_COUNT;
+		boardStatus = BOARD_STATUS_BLACK_COUNT;
 		return false;
 	}
 	else
-		status = BOARD_STATUS_OK;
+		boardStatus = BOARD_STATUS_OK;
 	return true;
 }
 void Board::addOutsideOfMap()
@@ -218,7 +259,7 @@ void Board::addOutsideOfMap()
 	map.push_back(temp2);
 	map.insert(map.begin(), temp1);
 }
-void Board::areChainsRemovedOnLoad(string& status)
+void Board::areChainsRemovedOnLoad()
 {
 	int chainsNumber = (int)checkForChains()->size();
 	if (chainsNumber > 0) {

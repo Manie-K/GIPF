@@ -23,6 +23,10 @@ void Engine::executeCommand()
 		doMove();
 	else if (command == GAME_STATE_CMD)
 		printGameState();
+	else if (command == ALL_MOVES_CMD)
+		allMoves(false);
+	else if (command == ALL_MOVES_NUMBER_CMD)
+		allMoves(true);
 }
 
 bool Engine::getExit()const { return exit; }
@@ -71,4 +75,21 @@ void Engine::doMove()
 
 	moveStatus = board->checkMove(start, end);
 	cout << moveStatus << endl << endl;
+}
+
+void Engine::allMoves(bool justNumber)
+{
+	unordered_map<string, vector<vector<char>>>* uniqueMaps = new unordered_map<string, vector<vector<char>>>;
+	string start, end;
+	if (board != nullptr){
+		//get all starts,ends
+		board->checkMove(start, end, uniqueMaps);
+	}
+	if (justNumber){
+		cout << uniqueMaps->size() << UNIQUE_MOVES_NUMBER;
+		return;
+	}
+	for (const auto& tempPair : *uniqueMaps){
+		cout << tempPair.first << endl;
+	}
 }

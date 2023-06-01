@@ -25,6 +25,7 @@ private:
 	Player* opponent;
 public:
 	Players(int GW, int GB, char cur);
+	Players(const Players& other);
 	Players(const Player& cur, const Player& opp);
 	~Players();
 	void switchPlayers();

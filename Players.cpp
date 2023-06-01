@@ -25,6 +25,11 @@ Players::Players(int GW, int GB, char cur)
 	if (cur == BLACK_PIECE)
 		switchPlayers();
 }
+Players::Players(const Players& other)
+{
+	current = new Player(other.current->getColor() == WHITE_PIECE, other.current->getPieces());
+	opponent = new Player(other.opponent->getColor() == WHITE_PIECE, other.opponent->getPieces());
+}
 Players::Players(const Player& cur, const Player& opp)
 {
 	current = new Player(cur);

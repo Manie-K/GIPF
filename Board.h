@@ -40,6 +40,7 @@ private:
 	void addOutsideOfMap();
 	void areChainsRemovedOnLoad();
 
+	bool mapIsFull() const;
 	string getNameByPos(const pair<int, int>& pos) const;
 	pair<int, int> getPosByName(const string& name) const;
 	

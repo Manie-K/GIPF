@@ -193,6 +193,7 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos, 
 	string& key,bool justWinning, bool* gameWon, unordered_map<string, vector<vector<char>>>* uniqueMaps)
 {
+	string startingKey = key;
 	//copy of players and map in case no chain choice when required
 	bool curWhite = players->getCurrent()->getColor() == WHITE_PIECE;
 	Player cur(curWhite, players->getCurrent()->getPieces());
@@ -232,18 +233,28 @@ bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos,
 			for (vector<char> innerVector : map)
 				collideChainsTempMap.push_back(innerVector);
 			
+			bool curWhite = players->getCurrent()->getColor() == WHITE_PIECE;
+			Player cur(curWhite, players->getCurrent()->getPieces());
+			Player opp(!curWhite, players->getOpponent()->getPieces());
+			Players afterChainRemovePlayers(cur, opp);
 
 			for (const vector<pair<int,int>>& chain : *collidingChains)
 			{
-				players = tempPlayers;
+				delete players;
+				players = new Players(afterChainRemovePlayers);
 				map = collideChainsTempMap;
 				string tempKey = removeGivenChain(chain);
+				key = startingKey;
 				if (tempKey != ""){
-					key += " " + colorChar;
-					key += ": " + tempKey;
+					key.push_back(' ');
+					key.push_back(colorChar);
+					key.push_back(':');
+					key.push_back(' ');
+					key += tempKey;
+					if (true);
 				}
 				if (checkIfIsUniqueMap(uniqueMaps, map)) {
-					if (justWinning && players->getOpponent()->getPieces() <= 0) {
+					if (justWinning && (players->getOpponent()->getPieces() <= 0 || mapIsFull())) {
 						//winning move
 						if (gameWon != nullptr) {
 							*gameWon = true;
@@ -275,7 +286,7 @@ bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos,
 
 	if (uniqueMaps != nullptr){ //we aren't doing real move, just checking
 		if (checkIfIsUniqueMap(uniqueMaps, map)){
-			if (justWinning && players->getOpponent()->getPieces() <= 0){
+			if (justWinning && (players->getOpponent()->getPieces() <= 0 || mapIsFull())){
 				//winning move
 				if (gameWon != nullptr) {
 					*gameWon = true;
@@ -888,6 +899,17 @@ string Board::makeStringFromName(int num, char letter)
 	tempStr += tempInt;
 
 	return tempStr;
+}
+
+bool Board::mapIsFull() const
+{
+	for (const vector<char>& row : map){
+		for (const char c : row){
+			if (c == EMPTY_PIECE)
+				return false;
+		}
+	}
+	return true;
 }
 
 int Board::stringToInt(const string& str)

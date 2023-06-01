@@ -88,7 +88,7 @@ string Board::checkMove(const string& start, const string& end, bool justWinning
 	}
 	if (!emptyPlace)
 		return MOVE_STATUS_ROW;
-	//if the move was bad, then uniqeMaps wont save this move
+
 	string key = start + " " + end;
 	if (move(line, endPos, key, justWinning, gameWon,uniqueMaps))
 		return MOVE_STATUS_OK;
@@ -99,13 +99,12 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 	string start, end;
 	bool* win = new bool(false);
 	const char baseLetter = 'a';
-	const char middleLetter = (2 * outsideSize - 1)/2 + baseLetter;
-	const char lastLetter = (2 * outsideSize - 1) + baseLetter-1;
+	const char middleLetter = (char)((2 * outsideSize - 1)/2 + baseLetter);
+	const char lastLetter = (char)((2 * outsideSize - 1) + baseLetter-1);
 
-	char letter = baseLetter;
 	//left top
-	for (int num = 1; num <= outsideSize; num++)
-	{
+	char letter = baseLetter;
+	for (int num = 1; num <= outsideSize; num++){
 		start = makeStringFromName(num, baseLetter);
 		end = makeStringFromName(num+1, baseLetter+1);
 		checkMove(start, end,justWinning, win,uniqueMaps);
@@ -116,8 +115,7 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 	}
 	//left bottom
 	letter = baseLetter;
-	for (int num = 1; num < outsideSize; num++)
-	{
+	for (int num = 1; num < outsideSize; num++){
 		letter++;
 		start = makeStringFromName(1, letter);
 		end = makeStringFromName(2, letter);
@@ -132,8 +130,7 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 	}
 	//bottom
 	letter = middleLetter;
-	for (int num = 1; num <= outsideSize; num++)
-	{
+	for (int num = 1; num <= outsideSize; num++){
 		start = makeStringFromName(1, letter);
 		end = makeStringFromName(2, letter);
 		checkMove(start, end,justWinning, win, uniqueMaps);
@@ -147,8 +144,7 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 	}
 	//right bottom
 	letter = lastLetter;
-	for (int num = 1; num <= outsideSize; num++)
-	{
+	for (int num = 1; num <= outsideSize; num++){
 		start = makeStringFromName(num, letter);
 		end = makeStringFromName(num, letter - 1);
 		checkMove(start, end,justWinning, win, uniqueMaps);
@@ -159,8 +155,7 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 	}
 	//right top
 	letter = lastLetter;
-	for (int num = 1; num <= outsideSize; num++)
-	{
+	for (int num = 1; num <= outsideSize; num++){
 		const int tempSize = outsideSize + num ;
 		letter--;
 		start = makeStringFromName(tempSize, letter);
@@ -173,8 +168,7 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 	}
 	//top
 	letter = middleLetter;
-	for (int num = 1; num <= outsideSize-2; num++)
-	{
+	for (int num = 1; num <= outsideSize-2; num++){
 		const int tempSize = 2*outsideSize-1-num;
 		letter--;
 		start = makeStringFromName(tempSize, letter);
@@ -185,7 +179,7 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 		checkMove(start, end,justWinning, win, uniqueMaps);
 		if (*win) return;
 	}
-
+	//if no moves possible, oponent win
 	if (uniqueMaps->empty())
 		gameState = players->getCurrent()->getColor() == WHITE_PIECE ? GAME_STATE_BLACK_WIN : GAME_STATE_WHITE_WIN;
 }
@@ -193,26 +187,25 @@ void Board::getAllMoves(unordered_map<string, vector<vector<char>>>*& uniqueMaps
 bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos, 
 	string& key,bool justWinning, bool* gameWon, unordered_map<string, vector<vector<char>>>* uniqueMaps)
 {
-	string startingKey = key;
 	//copy of players and map in case no chain choice when required
-	bool curWhite = players->getCurrent()->getColor() == WHITE_PIECE;
+	const char color = players->getCurrent()->getColor();
+	bool curWhite = color == WHITE_PIECE;
 	Player cur(curWhite, players->getCurrent()->getPieces());
 	Player opp(!curWhite, players->getOpponent()->getPieces());
 	Players* tempPlayers = new Players(cur, opp);
-	
+
 	vector<vector<char>> tempMap;
 	for (vector<char> innerVector : map)
 		tempMap.push_back(innerVector);
-	
-	const char color = players->getCurrent()->getColor();
+
 	int i = 0;
 	//move the pieces in line
-	while (i < (int)line.size() - 1){
+	while (i < (int)line.size() - 1) {
 		if (map.at(line.at(i).second).at(line.at(i).first) == EMPTY_PIECE)
 			break;
 		i++;
 	}
-	for (; i > 0; i--){
+	for (; i > 0; i--) {
 		map.at(line.at(i).second).at(line.at(i).first) = map.at(line.at(i - 1).second).at(line.at(i - 1).first);
 	}
 	map.at(endPos.second).at(endPos.first) = color;
@@ -221,57 +214,19 @@ bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos,
 	vector<vector<pair<int, int>>>* nonCollidingChains = checkForChains();
 	vector<vector<pair<int, int>>>* collidingChains = setCollidingChains(nonCollidingChains);
 
-	if (collidingChains->size() > 0){ //need to the delete chosen one
-		if (uniqueMaps != nullptr)
-		{
-			const char colorChar = color == WHITE_PIECE ? 'w' : 'b';
-
+	if (collidingChains->size() > 0) {
+		bool returnToDefault = false;
+		if (uniqueMaps != nullptr){
 			for (vector<pair<int, int>>& chain : *nonCollidingChains)
 				removeGivenChain(chain);
-
-			vector<vector<char>> collideChainsTempMap;
-			for (vector<char> innerVector : map)
-				collideChainsTempMap.push_back(innerVector);
-			
-			bool curWhite = players->getCurrent()->getColor() == WHITE_PIECE;
-			Player cur(curWhite, players->getCurrent()->getPieces());
-			Player opp(!curWhite, players->getOpponent()->getPieces());
-			Players afterChainRemovePlayers(cur, opp);
-
-			for (const vector<pair<int,int>>& chain : *collidingChains)
-			{
-				delete players;
-				players = new Players(afterChainRemovePlayers);
-				map = collideChainsTempMap;
-				string tempKey = removeGivenChain(chain);
-				key = startingKey;
-				if (tempKey != ""){
-					key.push_back(' ');
-					key.push_back(colorChar);
-					key.push_back(':');
-					key.push_back(' ');
-					key += tempKey;
-					if (true);
-				}
-				if (checkIfIsUniqueMap(uniqueMaps, map)) {
-					if (justWinning && (players->getOpponent()->getPieces() <= 0 || mapIsFull())) {
-						//winning move
-						if (gameWon != nullptr) {
-							*gameWon = true;
-						}
-						uniqueMaps->clear();
-					}
-					uniqueMaps->insert(make_pair(key, map));
-				}
-			}
-
-			delete nonCollidingChains;
-			delete collidingChains;
-			players = tempPlayers;
-			map = tempMap;
-			return false;
+			handleSimulationOfMultiChain(uniqueMaps, gameWon, key, justWinning, collidingChains);
+			returnToDefault = true;
 		}
-		else if (!handleCollidingChains(collidingChains)){
+		else if (!handleCollidingChains(collidingChains)) {
+			returnToDefault = true;
+		}
+
+		if (returnToDefault){
 			delete nonCollidingChains;
 			delete collidingChains;
 			players = tempPlayers;
@@ -283,11 +238,9 @@ bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos,
 	for (vector<pair<int, int>>& chain : *nonCollidingChains)
 		removeGivenChain(chain);
 
-
-	if (uniqueMaps != nullptr){ //we aren't doing real move, just checking
-		if (checkIfIsUniqueMap(uniqueMaps, map)){
-			if (justWinning && (players->getOpponent()->getPieces() <= 0 || mapIsFull())){
-				//winning move
+	if (uniqueMaps != nullptr) { //we aren't doing real move, just checking
+		if (checkIfIsUniqueMap(uniqueMaps, map)) {
+			if (justWinning && (players->getOpponent()->getPieces() <= 0 || mapIsFull())) {//winning move
 				if (gameWon != nullptr) {
 					*gameWon = true;
 				}
@@ -305,7 +258,7 @@ bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos,
 	players->getCurrent()->setPieces(players->getCurrent()->getPieces() - 1);
 	players->switchPlayers();
 
-	if (players->getCurrent()->getPieces() <= 0){
+	if (players->getCurrent()->getPieces() <= 0) {
 		if (players->getOpponent()->getColor() == WHITE_PIECE)
 			gameState = GAME_STATE_WHITE_WIN;
 		else
@@ -319,7 +272,50 @@ bool Board::move(vector<pair<int, int>>& line, const pair<int, int>& endPos,
 	return true;
 }
 
-bool Board::checkIfIsUniqueMap(unordered_map<string, vector<vector<char>>>*& uniqueMaps,const  vector<vector<char>> tempMap) const
+void Board::handleSimulationOfMultiChain(unordered_map<string, vector<vector<char>>>* uniqueMaps,
+	bool* gameWon, string& key, bool winning, vector<vector<pair<int, int>>>*& collidingChains)
+{
+	const string startingKey = key;
+
+	const char color = players->getCurrent()->getColor();
+	bool curWhite = color == WHITE_PIECE;
+	const char colorChar = color == WHITE_PIECE ? 'w' : 'b';
+
+	vector<vector<char>> collideChainsTempMap;
+	for (vector<char> innerVector : map)
+		collideChainsTempMap.push_back(innerVector);
+
+	Player current(curWhite, players->getCurrent()->getPieces());
+	Player opponent(!curWhite, players->getOpponent()->getPieces());
+	Players afterChainRemovePlayers(current, opponent);
+
+	for (const vector<pair<int, int>>& chain : *collidingChains)
+	{
+		delete players;
+		players = new Players(afterChainRemovePlayers);
+		map = collideChainsTempMap;
+		string tempKey = removeGivenChain(chain);
+		key = startingKey;
+		if (tempKey != "") {
+			key.push_back(' ');
+			key.push_back(colorChar);
+			key.push_back(':');
+			key.push_back(' ');
+			key += tempKey;
+		}
+		if (checkIfIsUniqueMap(uniqueMaps, map)) {
+			if (winning && (players->getOpponent()->getPieces() <= 0 || mapIsFull())) {//winning move
+				if (gameWon != nullptr) {
+					*gameWon = true;
+				}
+				uniqueMaps->clear();
+			}
+			uniqueMaps->insert(make_pair(key, map));
+		}
+	}
+}
+
+bool Board::checkIfIsUniqueMap(unordered_map<string, vector<vector<char>>>*& uniqueMaps,const vector<vector<char>>& tempMap) const
 {
 	if (uniqueMaps->empty())
 		return true;
@@ -330,8 +326,8 @@ bool Board::checkIfIsUniqueMap(unordered_map<string, vector<vector<char>>>*& uni
 			continue;
 		}
 		bool isUnique = false;
-		for (int i = 0; i < givenMap.size(); i++){
-			for (int j = 0; j < givenMap.at(i).size(); j++) {
+		for (int i = 0; i < (int)givenMap.size(); i++){
+			for (int j = 0; j < (int)givenMap.at(i).size(); j++) {
 				if (givenMap.at(i).at(j) != tempMap.at(i).at(j)){
 					isUnique = true;
 					break;

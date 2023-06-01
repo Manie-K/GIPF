@@ -89,8 +89,7 @@ void Engine::allMoves(bool justNumber, bool justWinning, bool justUpdateGameStat
 	unordered_map<string, vector<vector<char>>>* uniqueMaps = new unordered_map<string, vector<vector<char>>>;
 	if (board != nullptr) {
 		board->getAllMoves(uniqueMaps, justWinning);
-		if (justUpdateGameState)
-		{
+		if (justUpdateGameState){
 			return; //just to update gameState
 		}
 		if (justNumber) {

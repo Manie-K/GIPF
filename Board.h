@@ -41,17 +41,20 @@ private:
 	void areChainsRemovedOnLoad();
 
 	bool mapIsFull() const;
+
 	string getNameByPos(const pair<int, int>& pos) const;
 	pair<int, int> getPosByName(const string& name) const;
 	
 	bool move(vector<pair<int, int>>& line, const pair<int, int>& endPos, 
 		string& key, bool justWinning, bool* gameWon=nullptr, unordered_map<string, vector<vector<char>>>* uniqueMaps = nullptr);
-	bool checkIfIsUniqueMap(unordered_map<string, vector<vector<char>>>*& uniqueMaps,const  vector<vector<char>> tempMap) const;
+	bool checkIfIsUniqueMap(unordered_map<string, vector<vector<char>>>*& uniqueMaps,const vector<vector<char>>& tempMap) const;
 
 	vector<pair<int, int>> getLine(const string& nameA, const string& nameB) const;
 
 	string removeGivenChain(const vector<pair<int, int>>& chain);
 	bool handleCollidingChains(vector<vector<pair<int, int>>>* collidingChains);
+	void handleSimulationOfMultiChain(unordered_map<string, vector<vector<char>>>* uniqueMaps,
+		bool* gameWon, string& key, bool winning, vector<vector<pair<int, int>>>*& collidingChains);
 
 	void chainsInLine(const vector<pair<int, int>>& line, vector<vector<pair<int, int>>>* chains) const;
 	vector<vector<pair<int, int>>>* checkForChains() const;

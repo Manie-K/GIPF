@@ -11,6 +11,7 @@ private:
 	int piecesCount;
 public:
 	Player(bool white, int piecesCount);
+	Player(const Player& other);
 	int getPieces()const;
 	char getColor()const;
 	void setPieces(int p);
@@ -24,6 +25,7 @@ private:
 	Player* opponent;
 public:
 	Players(int GW, int GB, char cur);
+	Players(const Player& cur, const Player& opp);
 	~Players();
 	void switchPlayers();
 	Player*& getCurrent();

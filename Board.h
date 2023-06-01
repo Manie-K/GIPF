@@ -16,7 +16,7 @@ class Board
 private:
 	const int size, maxSize, pieceCollectSize, outsideSize, totalWhite, totalBlack;
 	Players* players;
-	string boardStatus,gameState;
+	string boardStatus, gameState;
 	vector<vector<char>> map;
 	unordered_map<string, pair<int, int>> posMap;
 	unordered_map<string, string> nameMap; //first string is position written in string
@@ -44,12 +44,12 @@ private:
 	pair<int, int> getPosByName(const string& name) const;
 	
 	bool move(vector<pair<int, int>>& line, const pair<int, int>& endPos, 
-		const string& key, bool justWinning, bool* gameWon=nullptr, unordered_map<string, vector<vector<char>>>* uniqueMaps = nullptr);
+		string& key, bool justWinning, bool* gameWon=nullptr, unordered_map<string, vector<vector<char>>>* uniqueMaps = nullptr);
 	bool checkIfIsUniqueMap(unordered_map<string, vector<vector<char>>>*& uniqueMaps,const  vector<vector<char>> tempMap) const;
 
 	vector<pair<int, int>> getLine(const string& nameA, const string& nameB) const;
 
-	void removeGivenChain(const vector<pair<int, int>>& chain);
+	string removeGivenChain(const vector<pair<int, int>>& chain);
 	bool handleCollidingChains(vector<vector<pair<int, int>>>* collidingChains);
 
 	void chainsInLine(const vector<pair<int, int>>& line, vector<vector<pair<int, int>>>* chains) const;

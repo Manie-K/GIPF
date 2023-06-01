@@ -1,6 +1,6 @@
 #include "Engine.h"
 
-Engine::Engine() :board(nullptr), command(""), gameState(GAME_STATE_PROGRESS), exit(false) {}
+Engine::Engine() :board(nullptr), command(""), exit(false) {}
 Engine::~Engine() { delete board; }
 
 void Engine::inputCommand()
@@ -21,8 +21,10 @@ void Engine::executeCommand()
 		printGameBoard();
 	else if (command == DO_MOVE_CMD)
 		doMove();
-	else if (command == GAME_STATE_CMD)
+	else if (command == GAME_STATE_CMD || command == GAME_STATE_STOS_CMD) {
+		allMoves(false, false, true);
 		printGameState();
+	}
 	else if (command == ALL_MOVES_CMD)
 		allMoves(false, false);
 	else if (command == ALL_MOVES_NUMBER_CMD)
@@ -49,13 +51,14 @@ void Engine::loadGame()
 	w = Board::stringToInt(GW);
 	b = Board::stringToInt(GB);
 	board = new Board(s, k, w, b);
+
 	string boardStatus = board->getBoardStatus();
 	if (boardStatus != BOARD_STATUS_OK)
 	{
 		delete board;
 		board = nullptr;
 	}
-	cout << boardStatus << endl << endl;
+	cout << boardStatus << endl;
 }
 void Engine::printGameBoard() const
 {
@@ -66,7 +69,7 @@ void Engine::printGameBoard() const
 }
 void Engine::printGameState() const
 {
-	cout << board->getGameState() << endl << endl;
+	cout << board->getGameState() << endl;
 }
 void Engine::doMove()
 {
@@ -81,11 +84,15 @@ void Engine::doMove()
 	cout << moveStatus << endl << endl;
 }
 
-void Engine::allMoves(bool justNumber, bool justWinning)
+void Engine::allMoves(bool justNumber, bool justWinning, bool justUpdateGameState)
 {
 	unordered_map<string, vector<vector<char>>>* uniqueMaps = new unordered_map<string, vector<vector<char>>>;
 	if (board != nullptr) {
 		board->getAllMoves(uniqueMaps, justWinning);
+		if (justUpdateGameState)
+		{
+			return; //just to update gameState
+		}
 		if (justNumber) {
 			cout << uniqueMaps->size() << UNIQUE_MOVES_NUMBER << endl;
 			return;

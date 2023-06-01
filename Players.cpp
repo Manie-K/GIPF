@@ -8,6 +8,11 @@ Player::Player(bool white, int piecesCount)
 	else
 		color = BLACK_PIECE;
 }
+Player::Player(const Player& other)
+{
+	this->color = other.color;
+	this->piecesCount = other.piecesCount;
+}
 int Player::getPieces()const { return piecesCount; }
 char Player::getColor()const { return color; }
 void Player::setPieces(int p) { piecesCount = p; }
@@ -19,6 +24,11 @@ Players::Players(int GW, int GB, char cur)
 	opponent = new Player(false, GB);
 	if (cur == BLACK_PIECE)
 		switchPlayers();
+}
+Players::Players(const Player& cur, const Player& opp)
+{
+	current = new Player(cur);
+	opponent = new Player(opp);
 }
 Players::~Players()
 {

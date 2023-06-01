@@ -10,7 +10,6 @@ class Engine {
 private:
 	Board* board;
 	string command;
-	string gameState;
 	bool exit;
 public:
 	Engine();
@@ -26,5 +25,5 @@ private:
 	void printGameBoard() const;
 	void printGameState() const;
 	void doMove();
-	void allMoves(bool justNumber, bool justWinning);
+	void allMoves(bool justNumber, bool justWinning, bool justUpdateGameState = false);
 };
